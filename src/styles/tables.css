@@ -110,6 +110,10 @@
   padding-right: 22px;
 }
 
+.tableStackable {
+  --table-stack-gap: 12px;
+}
+
 .tableHeader {
   display: flex;
   align-items: center;
@@ -321,6 +325,10 @@
     border-radius: 14px;
   }
 
+  .tableWrap {
+    border-radius: 14px;
+  }
+
   .tableHeader,
   .tableFilters,
   .tableFooter {
@@ -339,5 +347,42 @@
 
   .filterGroup {
     min-width: min(100%, 220px);
+  }
+
+  .tableStackable thead {
+    display: none;
+  }
+
+  .tableStackable,
+  .tableStackable tbody,
+  .tableStackable tr,
+  .tableStackable td {
+    display: block;
+    width: 100%;
+  }
+
+  .tableStackable tr {
+    border: 1px solid rgba(8, 68, 106, 0.1);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: var(--table-stack-gap, 12px);
+    background: #fff;
+    box-shadow: 0 16px 30px -28px rgba(8, 68, 106, 0.45);
+  }
+
+  .tableStackable td {
+    border: 0;
+    padding: 6px 0;
+  }
+
+  .tableStackable td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(12, 95, 143, 0.75);
+    margin-bottom: 2px;
   }
 }

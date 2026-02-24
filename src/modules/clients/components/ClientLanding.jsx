@@ -77,13 +77,13 @@ export default function ClientLanding({
   const yesNo = (v) => (v === true ? "SI" : v === false ? "NO" : v || "-");
 
   return (
-    <div style={{ display: "grid", gap: 20 }}>
-      <div className="toolbar" style={{ background: "white" }}>
-        <button type="button" className="btn" onClick={onBack}>
+    <div className="clientLandingLayout">
+      <div className="clientLandingToolbar toolbar">
+        <button type="button" className="btn clientLandingBackBtn" onClick={onBack}>
           ← Volver
         </button>
-        <div style={{ fontWeight: 800, fontSize: 18 }}>{clientName}</div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div className="clientLandingTitle">{clientName}</div>
+        <div className="clientLandingToolbarActions">
           <button type="button" className="btn" onClick={() => onNewActivity?.()}>
             Nueva actividad
           </button>
@@ -93,9 +93,9 @@ export default function ClientLanding({
         </div>
       </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
+      <div className="clientLandingCard">
         <div className="sectionTitle">Resumen del Cliente</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        <div className="clientLandingGrid">
           <div>
             <div className="smallMuted">Rep Legal</div>
             <div>{client.basic?.legalRep || "-"}</div>
@@ -127,11 +127,11 @@ export default function ClientLanding({
         </div>
       </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
+      <div className="clientLandingCard">
         <div className="sectionTitle">Contacto de comunicación</div>
         {hasContacts ? (
           <div className="tableWrap">
-            <table className="table">
+            <table className="table tableStackable">
               <thead>
                 <tr>
                   <th>Nombre</th>
@@ -145,17 +145,17 @@ export default function ClientLanding({
                   .filter((c) => (c?.email || "").trim() || (c?.phone || "").trim() || (c?.name || "").trim())
                   .map((c, idx) => (
                     <tr key={idx}>
-                      <td>{c?.name || "-"}</td>
-                      <td>{c?.role || "-"}</td>
-                      <td>{c?.email || "-"}</td>
-                      <td>{c?.phone || "-"}</td>
+                      <td data-label="Nombre">{c?.name || "-"}</td>
+                      <td data-label="Cargo">{c?.role || "-"}</td>
+                      <td data-label="Email">{c?.email || "-"}</td>
+                      <td data-label="Teléfono">{c?.phone || "-"}</td>
                     </tr>
                   ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+          <div className="clientLandingGrid">
             <div>
               <div className="smallMuted">Email</div>
               <div>{fallbackContactEmail || "-"}</div>
@@ -168,10 +168,10 @@ export default function ClientLanding({
         )}
       </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
+      <div className="clientLandingCard">
         <div className="sectionTitle">Estado de pólizas</div>
         <div className="tableWrap">
-          <table className="table">
+          <table className="table tableStackable">
             <thead>
               <tr>
                 <th>Línea</th>
@@ -191,11 +191,11 @@ export default function ClientLanding({
                 const p = policy(line.key);
                 return (
                   <tr key={line.key}>
-                    <td>{line.label}</td>
-                    <td>{yesNo(!!p.tienePoliza)}</td>
-                    <td>{(p.aseguradora || "").trim() || "-"}</td>
-                    <td>{(p.inicio || "").trim() || "-"}</td>
-                    <td>{(p.fin || "").trim() || "-"}</td>
+                    <td data-label="Línea">{line.label}</td>
+                    <td data-label="Tiene póliza">{yesNo(!!p.tienePoliza)}</td>
+                    <td data-label="Aseguradora">{(p.aseguradora || "").trim() || "-"}</td>
+                    <td data-label="Inicio">{(p.inicio || "").trim() || "-"}</td>
+                    <td data-label="Fin">{(p.fin || "").trim() || "-"}</td>
                   </tr>
                 );
               })}
@@ -204,9 +204,9 @@ export default function ClientLanding({
         </div>
       </div>
 
-      <div style={{ background: "white", padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
+      <div className="clientLandingCard">
         <div className="sectionTitle">Intermediación</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        <div className="clientLandingGrid">
           <div>
             <div className="smallMuted">Apta para intermediación</div>
             <div>{client.intermediacion?.apta || "-"}</div>
@@ -214,42 +214,34 @@ export default function ClientLanding({
         </div>
       </div>
 
-      <div>
+      <div className="clientLandingCard">
         <div className="sectionTitle">Tablero de Actividades</div>
         {loading ? (
           <div className="smallMuted">Cargando actividades...</div>
         ) : (
-          <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 8 }}>
+          <div className="clientActivitiesBoard">
             {STATUS_COLUMNS.map((col) => (
-              <div key={col} style={{ minWidth: 280, flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#374151" }}>{col}</div>
-                <div style={{ background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb", minHeight: 100 }}>
+              <div key={col} className="clientActivitiesBoardLane">
+                <div className="clientActivitiesBoardLaneHeader">{col}</div>
+                <div className="clientActivitiesBoardLaneBody">
                   {activities
                     .filter((a) => (a.status || "PENDIENTE") === col)
                     .map((a) => (
                       <div
                         key={a.id}
-                        style={{
-                          padding: 12,
-                          borderBottom: "1px solid #e5e7eb",
-                          cursor: "pointer",
-                          background: selectedActivity?.id === a.id ? "#eef2ff" : "white",
-                          margin: 4,
-                          borderRadius: 6,
-                          border: selectedActivity?.id === a.id ? "1px solid #bfdbfe" : "1px solid transparent"
-                        }}
+                        className={`clientActivityCard${selectedActivity?.id === a.id ? " is-active" : ""}`}
                         onClick={() => setSelectedActivity(a)}
                       >
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{a.title || a.activity}</div>
-                        <div className="smallMuted" style={{ marginTop: 4 }}>{a.dueDate || "Sin fecha"}</div>
-                        <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div className="smallMuted" style={{ fontSize: 11 }}>{a.responsibleUid || "Sin asignar"}</div>
-                          {typeof a.progress === "number" && (
-                            <div style={{ width: 40, background: "#e5e7eb", height: 4, borderRadius: 2, overflow: "hidden" }}>
-                              <div style={{ width: `${a.progress}%`, background: "#10b981", height: "100%" }}></div>
-                            </div>
-                          )}
+                        <div className="clientActivityCardTitle">{a.title || a.activity}</div>
+                        <div className="clientActivityCardMeta">
+                          <span>{a.dueDate || "Sin fecha"}</span>
+                          <span>{a.responsibleUid || "Sin asignar"}</span>
                         </div>
+                        {typeof a.progress === "number" && (
+                          <div className="clientActivityCardProgress" aria-label="Progreso">
+                            <div style={{ width: `${a.progress}%` }} />
+                          </div>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -260,36 +252,37 @@ export default function ClientLanding({
       </div>
 
       {selectedActivity && (
-        <div style={{ background: "white", padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, gap: 10, flexWrap: "wrap" }}>
+        <div className="clientLandingCard">
+          <div className="clientActivityDetailHeader">
             <div className="sectionTitle" style={{ margin: 0 }}>Seguimiento de Actividad</div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="clientActivityDetailActions">
               <button type="button" className="btn" onClick={() => onEditActivity?.(selectedActivity)}>
                 Editar actividad
               </button>
               <button className="btn" onClick={() => setSelectedActivity(null)}>Cerrar</button>
             </div>
           </div>
-          
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+
+          <div className="clientLandingGrid clientLandingGrid--wide">
             <div>
               <div className="smallMuted">Descripción</div>
               <div>{selectedActivity.description || selectedActivity.notes || "-"}</div>
             </div>
             <div>
               <div className="sectionTitle">Historial</div>
-              <div style={{ display: "grid", gap: 12 }}>
+              <div className="clientActivityHistory">
                 {selectedActivity.history?.slice().reverse().map((h, i) => (
-                  <div key={i} style={{ fontSize: 13, borderLeft: "2px solid #e5e7eb", paddingLeft: 12 }}>
-                    <div style={{ fontWeight: 600 }}>{h.type}</div>
+                  <div key={i} className="clientActivityHistoryItem">
+                    <div className="clientActivityHistoryType">{h.type}</div>
                     <div className="smallMuted">
                       {new Date(h.at).toLocaleString()} {h.by ? `· ${h.by}` : ""}
                     </div>
-                    {h.changes && Object.entries(h.changes).map(([f, v]) => (
-                      <div key={f} style={{ fontSize: 12 }}>
-                        {f}: {String(v.from || "-")} → {String(v.to || "-")}
-                      </div>
-                    ))}
+                    {h.changes &&
+                      Object.entries(h.changes).map(([f, v]) => (
+                        <div key={f} className="clientActivityHistoryChange">
+                          {f}: {String(v.from || "-")} → {String(v.to || "-")}
+                        </div>
+                      ))}
                   </div>
                 ))}
               </div>

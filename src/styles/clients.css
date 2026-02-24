@@ -1,0 +1,200 @@
+:root {
+  --client-card-shadow: 0 24px 55px -40px rgba(8, 68, 106, 0.45);
+}
+
+.clientLandingLayout {
+  display: grid;
+  gap: clamp(16px, 2.5vw, 28px);
+  padding: clamp(12px, 3vw, 28px);
+}
+
+.clientLandingToolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid rgba(8, 68, 106, 0.08);
+  border-radius: 22px;
+  padding: 14px clamp(16px, 2vw, 24px);
+  box-shadow: var(--client-card-shadow);
+}
+
+.clientLandingBackBtn {
+  border-radius: 12px;
+  border-color: rgba(8, 68, 106, 0.35);
+}
+
+.clientLandingTitle {
+  font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+  font-weight: 800;
+  color: var(--abp-blue-strong);
+  flex: 1;
+  min-width: 160px;
+}
+
+.clientLandingToolbarActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.clientLandingCard {
+  background: var(--surface);
+  border-radius: 22px;
+  border: 1px solid rgba(8, 68, 106, 0.08);
+  box-shadow: var(--client-card-shadow);
+  padding: clamp(16px, 2vw, 26px);
+  display: grid;
+  gap: 14px;
+}
+
+.clientLandingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+}
+
+.clientLandingGrid--wide {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.clientActivitiesBoard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.clientActivitiesBoardLane {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  border: 1px solid rgba(8, 68, 106, 0.08);
+  box-shadow: 0 18px 40px -32px rgba(8, 68, 106, 0.5);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.clientActivitiesBoardLaneHeader {
+  padding: 12px 18px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(12, 95, 143, 0.8);
+  border-bottom: 1px solid rgba(8, 68, 106, 0.12);
+}
+
+.clientActivitiesBoardLaneBody {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.clientActivityCard {
+  border: 1px solid rgba(8, 68, 106, 0.1);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clientActivityCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(12, 95, 143, 0.3);
+  box-shadow: 0 16px 25px -20px rgba(8, 68, 106, 0.45);
+}
+
+.clientActivityCard.is-active {
+  border-color: rgba(12, 95, 143, 0.5);
+  box-shadow: 0 18px 30px -24px rgba(12, 95, 143, 0.55);
+}
+
+.clientActivityCardTitle {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.clientActivityCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.clientActivityCardProgress {
+  margin-top: 10px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(8, 68, 106, 0.12);
+  overflow: hidden;
+}
+
+.clientActivityCardProgress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--abp-blue-strong), var(--abp-blue));
+}
+
+.clientActivityDetailHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.clientActivityDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.clientActivityHistory {
+  display: grid;
+  gap: 14px;
+}
+
+.clientActivityHistoryItem {
+  border-left: 3px solid rgba(8, 68, 106, 0.2);
+  padding-left: 12px;
+}
+
+.clientActivityHistoryType {
+  font-weight: 700;
+}
+
+.clientActivityHistoryChange {
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+@media (max-width: 900px) {
+  .clientActivitiesBoard {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .clientLandingToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clientLandingToolbarActions {
+    justify-content: stretch;
+  }
+
+  .clientActivitiesBoard {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 6px;
+  }
+
+  .clientActivitiesBoardLane {
+    min-width: min(85vw, 320px);
+  }
+}

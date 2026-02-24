@@ -179,7 +179,7 @@ export default function ClientsTable({ companyId, onSelect }) {
         <div className="tableEmpty">No hay clientes que coincidan con los filtros seleccionados.</div>
       ) : (
         <div className="tableWrap">
-          <table className="table">
+          <table className="table tableStackable">
             <thead>
               <tr>
                 <th>
