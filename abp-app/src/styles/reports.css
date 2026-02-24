@@ -1,0 +1,40 @@
+.reportSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.reportSummaryCard {
+  border: 1px solid rgba(12, 95, 143, 0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(233, 242, 253, 0.75), rgba(255, 255, 255, 0.9));
+  display: grid;
+  gap: 6px;
+}
+
+.reportSummaryLabel {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(8, 68, 106, 0.75);
+  font-weight: 700;
+}
+
+.reportSummaryValue {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--abp-blue-strong);
+}
+
+.reportSectionTitle {
+  font-weight: 800;
+  color: var(--abp-blue-strong);
+  font-size: 1.05rem;
+  margin: 12px 0 6px;
+}
+
+.reportSectionNote {
+  color: #5b708a;
+  font-size: 0.85rem;
+}
