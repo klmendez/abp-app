@@ -25,6 +25,10 @@
   color: var(--text);
 }
 
+.tableScrollMobile {
+  min-width: 700px;
+}
+
 .table caption {
   padding: 18px 22px;
   font-weight: 800;
@@ -327,6 +331,8 @@
 
   .tableWrap {
     border-radius: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tableHeader,
@@ -349,40 +355,17 @@
     min-width: min(100%, 220px);
   }
 
-  .tableStackable thead {
-    display: none;
+  .tableScrollMobile {
+    min-width: 560px;
   }
 
-  .tableStackable,
-  .tableStackable tbody,
-  .tableStackable tr,
-  .tableStackable td {
-    display: block;
-    width: 100%;
+  .tableScrollMobile th,
+  .tableScrollMobile td {
+    padding: 10px 12px;
+    font-size: 0.85rem;
   }
 
-  .tableStackable tr {
-    border: 1px solid rgba(8, 68, 106, 0.1);
-    border-radius: 14px;
-    padding: 10px 14px;
-    margin-bottom: var(--table-stack-gap, 12px);
-    background: #fff;
-    box-shadow: 0 16px 30px -28px rgba(8, 68, 106, 0.45);
-  }
-
-  .tableStackable td {
-    border: 0;
-    padding: 6px 0;
-  }
-
-  .tableStackable td::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(12, 95, 143, 0.75);
-    margin-bottom: 2px;
+  .tableScrollMobile th {
+    font-size: 0.7rem;
   }
 }

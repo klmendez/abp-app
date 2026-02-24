@@ -95,32 +95,32 @@ export default function ClientLanding({
 
       <div className="clientLandingCard">
         <div className="sectionTitle">Resumen del Cliente</div>
-        <div className="clientLandingGrid">
-          <div>
+        <div className="clientLandingGrid clientSummaryGrid">
+          <div className="clientSummaryItem">
             <div className="smallMuted">Rep Legal</div>
             <div>{client.basic?.legalRep || "-"}</div>
           </div>
-          <div>
+          <div className="clientSummaryItem">
             <div className="smallMuted">NIT</div>
             <div>{client.basic?.nit || client.nit || "-"}</div>
           </div>
-          <div>
+          <div className="clientSummaryItem">
             <div className="smallMuted">Ciudad</div>
             <div>{client.basic?.city || client.city || "-"}</div>
           </div>
-          <div>
+          <div className="clientSummaryItem">
             <div className="smallMuted">Estado comercial</div>
             <div>{client.commercial?.commercialStatus || "-"}</div>
           </div>
-          <div>
+          <div className="clientSummaryItem">
             <div className="smallMuted">Acompañamiento comercial</div>
             <div>{client.commercial?.accompanied || "-"}</div>
           </div>
-          <div>
+          <div className="clientSummaryItem">
             <div className="smallMuted">Gestor comercial</div>
             <div>{responsibleLabel()}</div>
           </div>
-          <div>
+          <div className="clientSummaryItem">
             <div className="smallMuted">Comentario</div>
             <div>{client.commercial?.notes || "-"}</div>
           </div>
@@ -131,7 +131,7 @@ export default function ClientLanding({
         <div className="sectionTitle">Contacto de comunicación</div>
         {hasContacts ? (
           <div className="tableWrap">
-            <table className="table tableStackable">
+            <table className="table tableStackable tableScrollMobile">
               <thead>
                 <tr>
                   <th>Nombre</th>
@@ -171,7 +171,7 @@ export default function ClientLanding({
       <div className="clientLandingCard">
         <div className="sectionTitle">Estado de pólizas</div>
         <div className="tableWrap">
-          <table className="table tableStackable">
+          <table className="table tableStackable tableScrollMobile">
             <thead>
               <tr>
                 <th>Línea</th>
