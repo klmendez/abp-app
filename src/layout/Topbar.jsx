@@ -3,6 +3,7 @@ const sectionTitles = {
   activities: "Actividades",
   clients: "Clientes",
   reports: "Informes financieros",
+  powerbi: "Informe Power BI",
   chartOfAccounts: "Plan de Cuentas",
   vouchers: "Comprobantes",
   users: "Usuarios",

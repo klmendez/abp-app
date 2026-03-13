@@ -6,8 +6,16 @@ import ActivityFilters from "./components/ActivityFilters";
 import ActivityBoard from "./components/ActivityBoard";
 import ActivityForm from "./components/ActivityForm";
 import ActivityDetail from "./components/ActivityDetail";
+import ActivityNoveltyModal from "./components/ActivityNoveltyModal";
 
 const STATUS_COLUMNS = ["PENDIENTE", "EN_PROCESO", "COMPLETADA"];
+
+const createEmptyNoveltyDraft = () => ({
+  date: "",
+  title: "",
+  description: "",
+  nextStep: "",
+});
 
 export default function ActivitiesPage({
   companyId = "abp",
@@ -45,6 +53,12 @@ export default function ActivitiesPage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [selectedForView, setSelectedForView] = useState(null);
+  const [addingNovelty, setAddingNovelty] = useState(false);
+  const [noveltyError, setNoveltyError] = useState("");
+  const [noveltyModalOpen, setNoveltyModalOpen] = useState(false);
+  const [noveltyDraft, setNoveltyDraft] = useState(() => createEmptyNoveltyDraft());
+  const [editingNoveltyId, setEditingNoveltyId] = useState(null);
+  const [editingNoveltyCreatedAt, setEditingNoveltyCreatedAt] = useState(null);
 
   useEffect(() => {
     const col = collection(db, "activities");
@@ -133,6 +147,11 @@ export default function ActivitiesPage({
     setError("");
     setSelectedForView(null);
     setView("form");
+    setNoveltyError("");
+    setNoveltyModalOpen(false);
+    setNoveltyDraft(createEmptyNoveltyDraft());
+    setEditingNoveltyId(null);
+    setEditingNoveltyCreatedAt(null);
     onInitialClientConsumed?.();
   }, [initialClient?.id]);
 
@@ -158,6 +177,11 @@ export default function ActivitiesPage({
     setError("");
     setSelectedForView(null);
     setView("form");
+    setNoveltyError("");
+    setNoveltyModalOpen(false);
+    setNoveltyDraft(createEmptyNoveltyDraft());
+    setEditingNoveltyId(null);
+    setEditingNoveltyCreatedAt(null);
   };
 
   const startEdit = (row) => {
@@ -175,6 +199,11 @@ export default function ActivitiesPage({
     setError("");
     setSelectedForView(row);
     setView("form");
+    setNoveltyError("");
+    setNoveltyModalOpen(false);
+    setNoveltyDraft(createEmptyNoveltyDraft());
+    setEditingNoveltyId(null);
+    setEditingNoveltyCreatedAt(null);
   };
 
   const save = async (e) => {
@@ -413,11 +442,21 @@ export default function ActivitiesPage({
     setSelectedForView(null);
     setEditingId(null);
     setError("");
+    setNoveltyError("");
+    setNoveltyModalOpen(false);
+    setNoveltyDraft(createEmptyNoveltyDraft());
+    setEditingNoveltyId(null);
+    setEditingNoveltyCreatedAt(null);
   };
 
   const handleSelectActivity = (activity) => {
     setSelectedForView(activity);
     setView("detail");
+    setNoveltyModalOpen(false);
+    setNoveltyDraft(createEmptyNoveltyDraft());
+    setNoveltyError("");
+    setEditingNoveltyId(null);
+    setEditingNoveltyCreatedAt(null);
   };
 
   const handleDraftChange = (field, value) => {
@@ -432,9 +471,149 @@ export default function ActivitiesPage({
     setError("");
   };
 
+  const handleNoveltyFieldChange = (field, value) => {
+    setNoveltyDraft((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleOpenNoveltyModal = (novelty = null) => {
+    if (!selectedForView?.id) return;
+    if (novelty) {
+      setNoveltyDraft({
+        date: novelty.date || "",
+        title: novelty.title || "",
+        description: novelty.description || "",
+        nextStep: novelty.nextStep || "",
+      });
+      setEditingNoveltyId(novelty.id || null);
+      setEditingNoveltyCreatedAt(Number.isFinite(novelty.createdAt) ? novelty.createdAt : null);
+    } else {
+      setNoveltyDraft(createEmptyNoveltyDraft());
+      setEditingNoveltyId(null);
+      setEditingNoveltyCreatedAt(null);
+    }
+    setNoveltyModalOpen(true);
+    setNoveltyError("");
+  };
+
+  const handleCloseNoveltyModal = () => {
+    if (addingNovelty) return;
+    setNoveltyModalOpen(false);
+    setNoveltyDraft(createEmptyNoveltyDraft());
+    setNoveltyError("");
+    setEditingNoveltyId(null);
+    setEditingNoveltyCreatedAt(null);
+  };
+
+  const handleAddNovelty = async ({ date, title, description, nextStep }) => {
+    if (!selectedForView?.id) return false;
+    const cleanDate = String(date || "").trim();
+    const cleanTitle = (title || "").trim();
+    const cleanDescription = (description || "").trim();
+    const cleanNextStep = (nextStep || "").trim();
+
+    if (!cleanDate || !cleanTitle || !cleanDescription || !cleanNextStep) {
+      setNoveltyError("Completa fecha, título, descripción y paso a seguir");
+      return false;
+    }
+
+    setNoveltyError("");
+    setAddingNovelty(true);
+
+    const targetId = selectedForView.id;
+    const original = rows.find((r) => r.id === targetId) || selectedForView;
+    const prevNovelties = Array.isArray(original.novelties) ? original.novelties.slice() : [];
+
+    const randomId = () => {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return Math.random().toString(36).slice(2);
+    };
+
+    const now = Date.now();
+    const updatingExisting = Boolean(editingNoveltyId || editingNoveltyCreatedAt);
+
+    const buildUpdatedEntry = (entry) => ({
+      ...entry,
+      date: cleanDate,
+      title: cleanTitle,
+      description: cleanDescription,
+      nextStep: cleanNextStep,
+      updatedAt: now,
+      updatedBy: userId || null,
+    });
+
+    let nextNovelties = prevNovelties;
+
+    if (updatingExisting) {
+      let replaced = false;
+      nextNovelties = prevNovelties.map((entry) => {
+        const sameId = editingNoveltyId && entry.id === editingNoveltyId;
+        const sameCreatedAt = !editingNoveltyId && editingNoveltyCreatedAt && entry.createdAt === editingNoveltyCreatedAt;
+        if (sameId || sameCreatedAt) {
+          replaced = true;
+          return buildUpdatedEntry(entry);
+        }
+        return entry;
+      });
+
+      if (!replaced) {
+        const fallbackEntry = {
+          id: editingNoveltyId || randomId(),
+          date: cleanDate,
+          title: cleanTitle,
+          description: cleanDescription,
+          nextStep: cleanNextStep,
+          createdAt: editingNoveltyCreatedAt || now,
+          createdBy: userId || null,
+          updatedAt: now,
+          updatedBy: userId || null,
+        };
+        nextNovelties = [...prevNovelties, fallbackEntry];
+      }
+    } else {
+      const noveltyEntry = {
+        id: randomId(),
+        date: cleanDate,
+        title: cleanTitle,
+        description: cleanDescription,
+        nextStep: cleanNextStep,
+        createdAt: now,
+        createdBy: userId || null,
+      };
+      nextNovelties = [...prevNovelties, noveltyEntry];
+    }
+
+    try {
+      await updateDoc(doc(db, "activities", targetId), {
+        novelties: nextNovelties,
+        updatedAt: serverTimestamp(),
+        updatedBy: userId || null,
+      });
+
+      setSelectedForView((prev) => (prev?.id === targetId ? { ...prev, novelties: nextNovelties } : prev));
+      setRows((prev) => prev.map((row) => (row.id === targetId ? { ...row, novelties: nextNovelties } : row)));
+      setNoveltyDraft(createEmptyNoveltyDraft());
+      setNoveltyModalOpen(false);
+      setEditingNoveltyId(null);
+      setEditingNoveltyCreatedAt(null);
+      return true;
+    } catch (err) {
+      console.error(err);
+      setNoveltyError(err?.message || "Error guardando novedad");
+      return false;
+    } finally {
+      setAddingNovelty(false);
+    }
+  };
+
   return (
-    <div className="homeShell">
-      <section className="homeQuick">
+    <div className="homeShell activitiesShell">
+      <section className="homeQuick activitiesLayout">
+
         <ActivityHeader
           view={view}
           selectedActivity={selectedForView}
@@ -498,8 +677,21 @@ export default function ActivitiesPage({
             clientLabel={clientLabel}
             fieldLabel={fieldLabel}
             formatChangeValue={formatChangeValue}
+            onOpenNoveltyModal={handleOpenNoveltyModal}
           />
         ) : null}
+
+        <ActivityNoveltyModal
+          open={noveltyModalOpen && !!selectedForView}
+          activity={selectedForView}
+          draft={noveltyDraft}
+          error={noveltyError}
+          saving={addingNovelty}
+          isEditing={Boolean(editingNoveltyId || editingNoveltyCreatedAt)}
+          onFieldChange={handleNoveltyFieldChange}
+          onSubmit={() => handleAddNovelty(noveltyDraft)}
+          onClose={handleCloseNoveltyModal}
+        />
 
         {summaryLabel ? (
           <div className="tableFooter">

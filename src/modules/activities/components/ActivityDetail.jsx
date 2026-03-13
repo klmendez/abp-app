@@ -8,8 +8,13 @@ export default function ActivityDetail({
   clientLabel,
   fieldLabel,
   formatChangeValue,
+  onOpenNoveltyModal,
 }) {
   if (!activity) return null;
+
+  const novelties = Array.isArray(activity.novelties)
+    ? activity.novelties.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    : [];
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -42,39 +47,91 @@ export default function ActivityDetail({
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-          <div>
+        <div className="activityDetailGrid">
+          <div className="activityDetailGridItem">
             <div className="smallMuted">Estado</div>
             <div>{activity.status || "-"}</div>
           </div>
-          <div>
+          <div className="activityDetailGridItem">
             <div className="smallMuted">Responsable</div>
             <div>{responsibleText(activity.responsibleUid)}</div>
           </div>
-          <div>
+          <div className="activityDetailGridItem">
             <div className="smallMuted">Asignada por</div>
             <div>{assignerText(activity.createdBy || activity.updatedBy || activity.assignerUid)}</div>
           </div>
-          <div>
+          <div className="activityDetailGridItem">
             <div className="smallMuted">Fecha límite</div>
             <div>{activity.dueDate || "Sin fecha"}</div>
           </div>
-          <div>
+          <div className="activityDetailGridItem">
             <div className="smallMuted">% avance</div>
             <div>{typeof activity.progress === "number" ? `${activity.progress}%` : "-"}</div>
           </div>
-          <div>
+          <div className="activityDetailGridItem">
             <div className="smallMuted">Cliente</div>
             <div>{activity.clientName || activity.clientId || "-"}</div>
           </div>
         </div>
 
-        <div style={{ marginTop: 10 }}>
+        <div className="activityDetailSection">
           <div className="smallMuted">Descripción</div>
           <div>{activity.description || activity.notes || "-"}</div>
         </div>
 
-        <div style={{ marginTop: 14 }}>
+        <div className="activityDetailSection">
+          <div className="sectionTitle" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span>Novedades</span>
+            <button type="button" className="btn btnPrimary" onClick={onOpenNoveltyModal}>
+              Agregar novedad
+            </button>
+          </div>
+
+          {novelties.length ? (
+            <div className="smallMuted" style={{ marginBottom: 8 }}>
+              Toca una novedad para editarla.
+            </div>
+          ) : null}
+
+          {novelties.length ? (
+            <div className="activityNoveltyList">
+              {novelties.map((novelty) => (
+                <button
+                  key={novelty.id || novelty.createdAt}
+                  type="button"
+                  onClick={() => onOpenNoveltyModal?.(novelty)}
+                  className="activityNoveltyCard"
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ fontWeight: 700 }}>{novelty.date || "Sin fecha"}</div>
+                    <div className="smallMuted">
+                      {novelty.createdAt ? new Date(novelty.createdAt).toLocaleString() : ""}
+                      {novelty.createdBy ? ` · por ${novelty.createdBy}` : ""}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <div className="smallMuted">Título</div>
+                    <div>{novelty.title || "-"}</div>
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <div className="smallMuted">Descripción</div>
+                    <div>{novelty.description || "-"}</div>
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <div className="smallMuted">Paso a seguir</div>
+                    <div>{novelty.nextStep || "-"}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="smallMuted" style={{ marginBottom: 14 }}>
+              Sin novedades cargadas.
+            </div>
+          )}
+        </div>
+
+        <div className="activityDetailSection">
           <div className="sectionTitle">Historial</div>
 
           {Array.isArray(activity.history) && activity.history.length ? (

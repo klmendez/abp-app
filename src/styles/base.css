@@ -152,6 +152,41 @@ textarea {
   }
 }
 
+@media (max-width: 640px) {
+  body {
+    font-size: 0.92rem;
+  }
+
+  .btn {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+  }
+
+  .input,
+  .select,
+  .textarea {
+    padding: 6px 8px;
+  }
+
+  .input,
+  .select {
+    height: 32px;
+  }
+
+  .textarea {
+    min-height: 72px;
+  }
+
+  .grid2 {
+    gap: 10px;
+  }
+
+  .sectionPage {
+    gap: 12px;
+  }
+}
+
 /* =============================
    LOGIN PAGE
    ============================= */

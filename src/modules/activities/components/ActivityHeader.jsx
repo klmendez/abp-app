@@ -6,7 +6,7 @@ export default function ActivityHeader({ view, selectedActivity, onCreate, onBac
         <p>Planifica y da seguimiento a las tareas del equipo.</p>
       </div>
 
-      <div className="homeQuickHeaderActions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="homeQuickHeaderActions">
         {view === "board" ? (
           <button type="button" className="btn btnPrimary" onClick={onCreate}>
             Nueva actividad

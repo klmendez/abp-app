@@ -10,6 +10,20 @@
   padding: 18px;
   display: grid;
   gap: 18px;
+  box-sizing: border-box;
+}
+
+.homeQuickHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.homeQuickHeaderActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .homeQuickHeader h2 {
@@ -69,4 +83,48 @@
 .homeQuickDescription {
   font-size: 0.85rem;
   color: #6b7280;
+}
+
+@media (max-width: 768px) {
+  .homeShell {
+    gap: 18px;
+  }
+
+  .homeQuick {
+    padding: 16px;
+  }
+
+  .homeQuickHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .homeQuickHeaderActions {
+    width: 100%;
+  }
+
+  .homeQuickHeaderActions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .activitiesLayout {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .homeQuick {
+    padding: 10px;
+    border-radius: 10px;
+    gap: 10px;
+  }
+
+  .homeShell {
+    gap: 10px;
+  }
+
+  .activitiesLayout {
+    gap: 8px;
+  }
 }

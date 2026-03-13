@@ -10,6 +10,7 @@ import ClientsPage from "./modules/clients/ClientsPage";
 import ChartOfAccountsPage from "./modules/accounting/ChartOfAccountsPage";
 import VouchersPage from "./modules/accounting/VouchersPage";
 import ReportsPage from "./modules/reports/ReportsPage";
+import PowerBIPage from "./modules/powerbi/PowerBIPage";
 import HomePage from "./modules/home/HomePage";
 import UsersAdmin from "./UsersAdmin";
 
@@ -141,6 +142,9 @@ export default function App() {
     }
     if (activeSection === "reports") {
       return <ReportsPage companyId="abp" />;
+    }
+    if (activeSection === "powerbi") {
+      return <PowerBIPage />;
     }
     if (activeSection === "users" && canManageUsers) {
       return <UsersAdmin companyId="abp" currentUserId={user.uid} />;

@@ -55,6 +55,13 @@ export default function ActivityBoard({
                 const progress = typeof row.progress === "number" ? row.progress : null;
                 const desc = String(row.description || row.notes || "").trim() ? row.description || row.notes : "-";
                 const assigner = assignerText(row.createdBy || row.updatedBy || row.assignerUid);
+                const latestNoveltyList = Array.isArray(row.novelties)
+                  ? row.novelties.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                  : [];
+                const latestNovelty = latestNoveltyList[0] || null;
+
+                const noveltyDate = latestNovelty?.date || "Sin fecha";
+                const noveltyTitle = latestNovelty?.title || "Sin título";
 
                 return (
                   <button
@@ -95,6 +102,15 @@ export default function ActivityBoard({
                             {assigner}
                           </span>
                         </div>
+
+                        {latestNovelty ? (
+                          <div className="activityMetaItem">
+                            <span className="activityMetaLabel">Última novedad</span>
+                            <span className="activityMetaValue" title={noveltyTitle}>
+                              {noveltyDate} · {noveltyTitle}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
 
                       <div className="activityRowDesc" title={typeof desc === "string" ? desc : ""}>

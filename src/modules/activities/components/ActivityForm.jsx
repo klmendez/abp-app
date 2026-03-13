@@ -24,16 +24,16 @@ export default function ActivityForm({
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className="activityFormWrap">
       <div className="sectionTitle">{editingId ? "Editar actividad" : "Nueva actividad"}</div>
 
-      <form onSubmit={onSubmit} className="homeQuickCard" style={{ textAlign: "left", cursor: "default" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
+      <form onSubmit={onSubmit} className="homeQuickCard activityFormCard">
+        <div className="activityFormHeader">
           <div className="smallMuted">Completa los datos y guarda</div>
           {editingId ? <div className="smallMuted">ID: {editingId}</div> : null}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+        <div className="activityFormGrid">
           <label style={{ display: "grid", gap: 6 }}>
             <span className="smallMuted">Título</span>
             <input className="input" value={draft.title} onChange={(e) => onFieldChange("title", e.target.value)} />
@@ -98,12 +98,12 @@ export default function ActivityForm({
         </div>
 
         {error ? (
-          <div className="error" style={{ marginTop: 8 }}>
+          <div className="error activityFormError">
             {error}
           </div>
         ) : null}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14, gap: 8 }}>
+        <div className="activityFormActions">
           {editingId ? (
             <button type="button" className="btn" onClick={onCancel} disabled={saving}>
               Cancelar

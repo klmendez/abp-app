@@ -38,6 +38,19 @@ const quickLinks = [
     ),
   },
   {
+    id: "powerbi",
+    title: "Informe Power BI",
+    description: "Revisa el tablero interactivo de Power BI.",
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 4h14v16H5z" />
+        <path d="M8 16V9" />
+        <path d="M12 16V7" />
+        <path d="M16 16v-4" />
+      </svg>
+    ),
+  },
+  {
     id: "chartOfAccounts",
     title: "Plan de cuentas",
     description: "Visualiza y ordena tu catálogo contable.",

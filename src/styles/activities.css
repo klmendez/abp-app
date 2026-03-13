@@ -6,19 +6,20 @@
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  flex-wrap: wrap;
-  overflow-x: visible;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   padding: 12px 12px 16px;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
 
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
 }
 
 /* Columna (lane) */
 .activityLane {
-  flex: 1 1 260px;
-  max-width: calc(25% - 10px);
-  min-width: 240px;
+  flex: 0 0 320px;
+  max-width: 320px;
+  min-width: 300px;
   display: grid;
   gap: 10px;
   position: relative;
@@ -65,12 +66,12 @@
   border-left: 4px solid transparent;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 14px;
-  padding: 20px 20px 18px;
+  padding: 16px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  min-height: 220px;
+  gap: 14px;
+  min-height: 180px;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   color: inherit;
   font: inherit;
@@ -141,10 +142,10 @@
 .activityMetaItem {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
-  min-width: 200px;
-  max-width: 260px;
+  min-width: 160px;
+  max-width: 220px;
 }
 
 .activityMetaLabel {
@@ -182,7 +183,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   border-top: 1px solid rgba(148, 163, 184, 0.2);
   padding-top: 12px;
 }
@@ -224,6 +225,85 @@
   text-align: right;
 }
 
+/* Detail view */
+.activityDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.activityDetailGridItem {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(248, 250, 252, 0.85);
+}
+
+.activityDetailSection {
+  margin-top: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.activityNoveltyList {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.activityNoveltyCard {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.activityNoveltyCard:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 24px -20px rgba(15, 23, 42, 0.7);
+}
+
+/* Activity form */
+.activityFormWrap {
+  display: grid;
+  gap: 16px;
+}
+
+.activityFormCard {
+  text-align: left;
+  cursor: default;
+}
+
+.activityFormHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.activityFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.activityFormError {
+  margin-top: 8px;
+}
+
+.activityFormActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  gap: 8px;
+}
+
 /* =========================================================
    FILTERS (barra superior)
    ========================================================= */
@@ -233,6 +313,8 @@
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 
   padding: 10px 12px;
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -377,44 +459,186 @@
 
 @media (max-width: 1100px) {
   .activityLane {
-    max-width: calc(50% - 6px);
+    flex-basis: 280px;
+    max-width: 280px;
   }
 }
 
-@media (max-width: 720px) {
-  .activityLane {
-    max-width: 100%;
+@media (max-width: 880px) {
+  .activityBoard {
+    padding-bottom: 8px;
   }
 
-  .activityRow {
-    grid-template-columns: 1fr;
+  .activityFiltersBar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .activityRowAside {
-    justify-items: start;
-    min-width: 0;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
-
-  .activityMetaItem {
-    grid-template-columns: 100px 1fr;
-  }
-
-  .activityRowProgressBar {
-    width: 120px;
+  .afItem,
+  .afGrow,
+  .afToggle,
+  .afDivider {
+    width: 100%;
   }
 
   .afDivider {
     display: none;
   }
 
-  .afItem {
-    min-width: 100%;
+  .activityLane {
+    flex-basis: 250px;
+    max-width: 250px;
+    min-width: 250px;
+  }
+
+  .activityRowMeta {
+    justify-content: flex-start;
+  }
+
+  .activityMetaItem {
+    grid-template-columns: minmax(120px, 40%) 1fr;
+  }
+
+  .activityRowProgress {
+    justify-content: flex-start;
+  }
+
+  .activityRowProgressBar {
+    width: 100%;
+    max-width: 160px;
+  }
+
+  .activityFormGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .activityBoard {
+    gap: 12px;
+    padding-bottom: 6px;
+  }
+
+  .activityLane {
+    min-width: min(85vw, 320px);
+    max-width: min(85vw, 320px);
+  }
+}
+
+@media (max-width: 600px) {
+  .activityFiltersBar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .afItem,
+  .afGrow {
+    min-width: 0;
+  }
+
+  .afLabel {
+    font-size: 10px;
+  }
+
+  .afInput,
+  .afSelect {
+    height: 32px;
+    font-size: 12px;
   }
 
   .afToggle {
+    height: 32px;
+    padding: 0 8px;
+  }
+
+  .afToggleText {
+    font-size: 12px;
+  }
+
+  .activityBoard {
+    padding: 8px 0 12px;
+  }
+
+  .activityLane {
+    padding: 0;
+    flex-basis: min(85vw, 320px);
+    min-width: min(85vw, 320px);
+    max-width: min(85vw, 320px);
+  }
+
+  .activityRow {
+    padding: 14px;
+    gap: 12px;
+    min-height: unset;
+  }
+
+  .activityRowTitle {
+    text-align: left;
+    font-size: 14px;
+  }
+
+  .activityRowMeta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .activityMetaItem {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .activityRowStatusBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .activityRowProgress {
     width: 100%;
-    justify-content: space-between;
+    flex: none;
+  }
+
+  .activityRowProgressBar {
+    max-width: 100%;
+  }
+
+  .activityDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .activityDetailGridItem {
+    padding: 10px;
+  }
+
+  .activityDetailSection {
+    margin-top: 12px;
+  }
+
+  .activityNoveltyCard {
+    padding: 10px;
+  }
+
+  .activityFormWrap {
+    gap: 12px;
+  }
+
+  .activityFormCard {
+    padding: 12px;
+  }
+
+  .activityFormHeader {
+    margin-bottom: 10px;
+  }
+
+  .activityFormGrid {
+    gap: 10px;
+  }
+
+  .activityFormActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .activityFormActions .btn {
+    width: 100%;
   }
 }

@@ -39,6 +39,18 @@ const sections = [
     ),
   },
   {
+    id: "powerbi",
+    label: "Informe Power BI",
+    icon: (
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+        <path d="M5 4h14v16H5z" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M8 16V9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M12 16V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M16 16v-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     id: "chartOfAccounts",
     label: "Plan de Cuentas",
     icon: (
