@@ -1,3 +1,4 @@
+import { useState } from "react";
 import logoPro from "../assets/Logo profesional.webp";
 
 const sections = [
@@ -69,17 +70,51 @@ const sections = [
       </svg>
     ),
   },
+  {
+    id: "commissions",
+    label: "Comisiones",
+    icon: (
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M12 6v2M12 16v2M9 9.5c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2s-.9 2-2 2h-2c-1.1 0-2 .9-2 2s.9 2 2 2h2c1.1 0 2-.9 2-2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Sidebar({ activeSection, onChangeSection, isOpen, onClose }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   return (
-    <aside className={`sidebar ${isOpen ? "is-open" : ""}`} aria-label="Navegación principal">
+    <aside 
+      className={`sidebar ${isOpen ? "is-open" : ""} ${isCollapsed ? "is-collapsed" : ""}`} 
+      aria-label="Navegación principal"
+    >
       <div className="sidebarHeader">
-        <div className="sidebarBrand">
-          <img src={logoPro} alt="ABP Gestión" />
-        </div>
+        {!isCollapsed && (
+          <div className="sidebarBrand">
+            <img src={logoPro} alt="ABP Gestión" />
+          </div>
+        )}
+        <button 
+          type="button" 
+          className="sidebarToggle" 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+          title={isCollapsed ? "Expandir" : "Colapsar"}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+            {isCollapsed ? (
+              <path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            ) : (
+              <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+          </svg>
+        </button>
         <button type="button" className="sidebarClose" onClick={onClose} aria-label="Cerrar menú lateral">
-          Cerrar
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+            <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         </button>
       </div>
 
@@ -94,11 +129,10 @@ export default function Sidebar({ activeSection, onChangeSection, isOpen, onClos
             }}
             className={`sidebarNavItem ${activeSection === s.id ? "is-active" : ""}`}
             aria-current={activeSection === s.id ? "page" : undefined}
+            title={isCollapsed ? s.label : undefined}
           >
-            <span className="sidebarNavItemInner">
-              <span className="sidebarNavIcon">{s.icon}</span>
-              <span className="sidebarNavLabel">{s.label}</span>
-            </span>
+            <span className="sidebarNavIcon">{s.icon}</span>
+            {!isCollapsed && <span className="sidebarNavLabel">{s.label}</span>}
           </button>
         ))}
       </nav>

@@ -313,24 +313,17 @@ export default function ChartOfAccountsPage({ companyId, userId }) {
 
   // ===== APLICACIÓN DEL ESTILO "HomePage quickLinks" =====
   return (
-    <div className="homeShell">
-      <section className="homeQuick">
-        <div className="homeQuickHeader">
-          <div>
-            <h2>Plan de cuentas</h2>
-            <p>Filtra, reordena y mantén el catálogo contable actualizado (Grupo 3 · 6621).</p>
-          </div>
-
-          <div className="homeQuickHeaderActions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    <div className="pageContent">
+      <div className="pageInner">
+        <div className="pageActions">
             <button type="button" className="btn" onClick={loadBase} disabled={savingBase || !companyId}>
               {savingBase ? "Cargando..." : "Cargar plan base (PUC+ABP)"}
             </button>
           </div>
-        </div>
 
-        <div className="homeQuickGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
+        <div className="contentGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
           {/* Filtros */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
+          <div className="contentSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
             <div className="tableFilters" style={{ padding: 0 }}>
               <div className="filterGroup" style={{ flex: "1 1 260px" }}>
                 <span className="filterLabel">Buscar</span>
@@ -381,7 +374,7 @@ export default function ChartOfAccountsPage({ companyId, userId }) {
           </div>
 
           {/* Tabla */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default", padding: 0 }}>
+          <div className="contentSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default", padding: 0 }}>
             {loading ? (
               <div className="tableEmpty" style={{ padding: 18 }}>
                 Cargando plan de cuentas...
@@ -501,7 +494,7 @@ export default function ChartOfAccountsPage({ companyId, userId }) {
             ) : null}
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

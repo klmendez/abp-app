@@ -27,11 +27,8 @@ export default function MainLayout({ user, me, membership, activeSection, onChan
       <div className="app-main">
         <Topbar
           user={user}
-          me={me}
-          membership={membership}
           onSignOut={onSignOut}
           activeSection={activeSection}
-          onGoHome={onGoHome}
           onToggleNav={() => setIsNavOpen((v) => !v)}
         />
         <main className="page">

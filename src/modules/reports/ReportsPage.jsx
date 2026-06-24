@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { collection, collectionGroup, onSnapshot, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
 
 const REPORT_TABS = [
@@ -90,45 +90,40 @@ export default function ReportsPage({ companyId }) {
   useEffect(() => {
     if (!companyId) return;
 
-    let linesReady = false;
-    let accountsReady = false;
+    let cancelled = false;
 
-    const qLines = query(collectionGroup(db, "lines"), where("companyId", "==", companyId));
-    const unsubLines = onSnapshot(
-      qLines,
-      (snap) => {
-        setLines(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        linesReady = true;
-        if (accountsReady) setLoading(false);
-        setError("");
-      },
-      (err) => {
-        console.error(err);
-        linesReady = true;
-        if (accountsReady) setLoading(false);
-        setError(err?.message || "Error leyendo movimientos contables");
-      }
-    );
+    const loadData = async () => {
+      try {
+        // Load vouchers and their lines
+        const vouchersSnap = await getDocs(query(collection(db, "vouchers"), where("companyId", "==", companyId)));
+        const allLines = [];
+        for (const vDoc of vouchersSnap.docs) {
+          const linesSnap = await getDocs(collection(db, "vouchers", vDoc.id, "lines"));
+          linesSnap.docs.forEach(lDoc => {
+            allLines.push({ id: lDoc.id, ...lDoc.data(), companyId });
+          });
+        }
+        if (!cancelled) setLines(allLines);
 
-    const qAccounts = query(collection(db, "chartOfAccounts"), where("companyId", "==", companyId));
-    const unsubAccounts = onSnapshot(
-      qAccounts,
-      (snap) => {
-        setAccounts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        accountsReady = true;
-        if (linesReady) setLoading(false);
-      },
-      (err) => {
+        // Load chart of accounts
+        const accountsSnap = await getDocs(query(collection(db, "chartOfAccounts"), where("companyId", "==", companyId)));
+        if (!cancelled) {
+          setAccounts(accountsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          setLoading(false);
+        }
+      } catch (err) {
         console.error(err);
-        accountsReady = true;
-        if (linesReady) setLoading(false);
-        setError((prev) => prev || err?.message || "Error leyendo plan de cuentas");
+        if (!cancelled) {
+          setError(err?.message || "Error cargando datos");
+          setLoading(false);
+        }
       }
-    );
+    };
+
+    loadData();
 
     return () => {
-      unsubLines();
-      unsubAccounts();
+      cancelled = true;
     };
   }, [companyId]);
 
@@ -347,16 +342,9 @@ export default function ReportsPage({ companyId }) {
   }, [filtered]);
 
   return (
-    <div className="homeShell">
-      <section className="homeQuick">
-        <div className="homeQuickHeader">
-          <div>
-            <h2>Informes financieros</h2>
-            <p>Consulta indicadores y reportes contables.</p>
-          </div>
-
-          <div className="homeQuickHeaderActions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
+    <div className="pageContent">
+      
+        <div className="pageActions"><button
               type="button"
               className="btn"
               onClick={() => {
@@ -370,13 +358,11 @@ export default function ReportsPage({ companyId }) {
               }}
             >
               Exportar PDF
-            </button>
-          </div>
-        </div>
+            </button></div>
 
-        <div className="homeQuickGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
+        <div className="reportsGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
           {/* Filtro */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
+          <div className="filterSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
             <div style={{ fontWeight: 800, marginBottom: 10 }}>Filtro de periodo</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end" }}>
               <label style={{ display: "grid", gap: 6 }}>
@@ -401,7 +387,7 @@ export default function ReportsPage({ companyId }) {
           </div>
 
           {/* Tabs */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
+          <div className="filterSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {REPORT_TABS.map((t) => (
                 <button key={t.id} type="button" className={tab === t.id ? "btn btnPrimary" : "btn"} onClick={() => setTab(t.id)}>
@@ -418,7 +404,7 @@ export default function ReportsPage({ companyId }) {
           </div>
 
           {/* Report */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default", padding: 0 }}>
+          <div className="filterSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default", padding: 0 }}>
             <div ref={reportPrintRef} style={{ padding: 18 }}>
               {!loading && !error && tab === "BALANCE" ? (
                 <div style={{ display: "grid", gap: 14 }}>
@@ -798,7 +784,7 @@ export default function ReportsPage({ companyId }) {
             </div>
           </div>
         </div>
-      </section>
+      
     </div>
   );
 }

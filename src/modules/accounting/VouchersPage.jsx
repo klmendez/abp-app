@@ -533,24 +533,17 @@ export default function VouchersPage({ companyId, userId }) {
   // ===== FORM (mismo patrón visual HomePage) =====
   if (view === "form") {
     return (
-      <div className="homeShell">
-        <section className="homeQuick">
-          <div className="homeQuickHeader">
-            <div>
-              <h2>{loadingEdit ? "Cargando..." : editingId ? "Editar comprobante" : "Nuevo comprobante"}</h2>
-              <p>Registra el encabezado y las líneas contables del comprobante.</p>
-            </div>
-
-            <div className="homeQuickHeaderActions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="pageContent">
+        <div className="pageInner">
+          <div className="pageActions">
               <button type="button" className="btn" onClick={() => setView("list")} disabled={saving}>
                 ← Volver
               </button>
             </div>
-          </div>
 
-          <form onSubmit={save} className="homeQuickGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
+          <form onSubmit={save} className="contentGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
             {/* Encabezado */}
-            <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
+            <div className="contentSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
               <div className="sectionTitle" style={{ marginTop: 0 }}>
                 Encabezado
               </div>
@@ -608,7 +601,7 @@ export default function VouchersPage({ companyId, userId }) {
             </div>
 
             {/* Líneas contables */}
-            <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
+            <div className="contentSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
               <div className="sectionTitle" style={{ marginTop: 0 }}>
                 Líneas contables
               </div>
@@ -732,22 +725,16 @@ export default function VouchersPage({ companyId, userId }) {
               </button>
             </div>
           </form>
-        </section>
+        </div>
       </div>
     );
   }
 
   // ===== LIST (mismo patrón visual HomePage) =====
   return (
-    <div className="homeShell" ref={listPrintRef}>
-      <section className="homeQuick">
-        <div className="homeQuickHeader">
-          <div>
-            <h2>Libro de comprobantes</h2>
-            <p>Filtra movimientos, revisa soportes y controla el flujo contable.</p>
-          </div>
-
-          <div className="homeQuickHeaderActions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    <div className="pageContent" ref={listPrintRef}>
+      <div className="pageInner">
+        <div className="pageActions">
             <button
               type="button"
               className="btn"
@@ -766,11 +753,10 @@ export default function VouchersPage({ companyId, userId }) {
               Nuevo comprobante
             </button>
           </div>
-        </div>
 
-        <div className="homeQuickGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
+        <div className="contentGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
           {/* Filtros */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
+          <div className="contentSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
             <div className="tableFilters" style={{ padding: 0 }}>
               <div className="filterGroup" style={{ flex: "1 1 260px" }}>
                 <span className="filterLabel">Buscar</span>
@@ -818,7 +804,7 @@ export default function VouchersPage({ companyId, userId }) {
           </div>
 
           {/* Tabla */}
-          <div className="homeQuickCard" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default", padding: 0 }}>
+          <div className="contentSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default", padding: 0 }}>
             {loading ? (
               <div className="tableEmpty" style={{ padding: 18 }}>
                 Cargando comprobantes...
@@ -946,7 +932,7 @@ export default function VouchersPage({ companyId, userId }) {
             </div>
           ) : null}
         </div>
-      </section>
+      </div>
     </div>
   );
 }

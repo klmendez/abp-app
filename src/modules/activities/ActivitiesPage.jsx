@@ -611,8 +611,8 @@ export default function ActivitiesPage({
   };
 
   return (
-    <div className="homeShell activitiesShell">
-      <section className="homeQuick activitiesLayout">
+    <div className="pageContent activitiesShell">
+      <section className="activitiesLayout">
 
         <ActivityHeader
           view={view}

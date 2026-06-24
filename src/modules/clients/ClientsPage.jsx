@@ -71,39 +71,28 @@ export default function ClientsPage({
     );
   }
 
-  // Vista lista de clientes con el patrón HomePage (homeShell/homeQuick)
   return (
-    <div className="homeShell">
-      <section className="homeQuick">
-        <div className="homeQuickHeader">
-          <div>
-            <h2>Clientes</h2>
-            <p>Gestiona la información clave y contactos.</p>
-          </div>
+    <div className="pageContent">
+      <div className="pageActions">
+        <button type="button" className="btn btnPrimary" onClick={handleCreate}>
+          Nuevo cliente
+        </button>
+      </div>
 
-          <div className="homeQuickHeaderActions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" className="btn btnPrimary" onClick={handleCreate}>
-              Nuevo cliente
-            </button>
-          </div>
-        </div>
+      <ClientsTable companyId={companyId} onSelect={handleSelect} />
 
-        {/* Contenido principal limpio (sin card adicional) */}
-        <ClientsTable companyId={companyId} onSelect={handleSelect} />
-
-        {isModalOpen && (
-          <ClientFormModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            client={editingClient}
-            onSaved={(saved) => {
-              setEditingClient(saved);
-            }}
-            companyId={companyId}
-            userId={userId}
-          />
-        )}
-      </section>
+      {isModalOpen && (
+        <ClientFormModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          client={editingClient}
+          onSaved={(saved) => {
+            setEditingClient(saved);
+          }}
+          companyId={companyId}
+          userId={userId}
+        />
+      )}
     </div>
   );
 }

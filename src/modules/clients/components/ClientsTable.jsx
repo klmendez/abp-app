@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../../firebase";
 
 export default function ClientsTable({ companyId, onSelect }) {
@@ -23,12 +23,18 @@ export default function ClientsTable({ companyId, onSelect }) {
   };
 
   useEffect(() => {
-    const q = query(collection(db, "clients"), where("companyId", "==", companyId));
-    const unsub = onSnapshot(q, (snap) => {
-      setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    });
-    return () => unsub();
+    const loadClients = async () => {
+      try {
+        const q = query(collection(db, "clients"), where("companyId", "==", companyId));
+        const snap = await getDocs(q);
+        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error("Error loading clients:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadClients();
   }, [companyId]);
 
   const statusOptions = useMemo(() => {

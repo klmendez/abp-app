@@ -68,26 +68,21 @@ const quickLinks = [
 
 export default function HomePage({ onNavigate }) {
   return (
-    <div className="homeShell">
-      <section className="homeQuick">
-        <div className="homeQuickHeader">
-          <h2>Accesos directos</h2>
-          <p>Selecciona un módulo para continuar</p>
-        </div>
-        <div className="homeQuickGrid">
-          {quickLinks.map((link) => (
-            <button key={link.id} type="button" className="homeQuickCard" onClick={() => onNavigate?.(link.id)}>
-              <div className="homeQuickIcon" aria-hidden>
-                {link.icon}
-              </div>
-              <div>
-                <div className="homeQuickTitle">{link.title}</div>
-                <div className="homeQuickDescription">{link.description}</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
+    <div className="pageContent">
+      <div className="homeQuickGrid">
+        {quickLinks.map((link) => (
+          <button
+            key={link.id}
+            type="button"
+            className="homeQuickCard"
+            onClick={() => onNavigate?.(link.id)}
+          >
+            <span className="homeQuickIcon">{link.icon}</span>
+            <span className="homeQuickTitle">{link.title}</span>
+            <span className="homeQuickDesc">{link.description}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

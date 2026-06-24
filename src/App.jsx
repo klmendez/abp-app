@@ -13,6 +13,7 @@ import ReportsPage from "./modules/reports/ReportsPage";
 import PowerBIPage from "./modules/powerbi/PowerBIPage";
 import HomePage from "./modules/home/HomePage";
 import UsersAdmin from "./UsersAdmin";
+import CommissionsPage from "./modules/commissions/CommissionsPage";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -148,6 +149,9 @@ export default function App() {
     }
     if (activeSection === "users" && canManageUsers) {
       return <UsersAdmin companyId="abp" currentUserId={user.uid} />;
+    }
+    if (activeSection === "commissions") {
+      return <CommissionsPage companyId="abp" userId={user.uid} />;
     }
     // default: actividades
     return (
