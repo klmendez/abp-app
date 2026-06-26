@@ -46,9 +46,24 @@ function detectColumn(headers) {
   return result;
 }
 
+function formatDateLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function parseDateValue(v) {
-  if (!v) return "";
-  if (v instanceof Date) return v.toISOString().split("T")[0];
+  if (!v && v !== 0) return "";
+  // Número de serie de Excel (días desde 1899-12-30)
+  if (typeof v === "number") {
+    const excelEpoch = new Date(1899, 11, 30);
+    const date = new Date(excelEpoch.getTime() + v * 86400000);
+    return formatDateLocal(date);
+  }
+  if (v instanceof Date) {
+    return formatDateLocal(v);
+  }
   const s = String(v).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
@@ -59,8 +74,8 @@ function parseDateValue(v) {
     const [d, m, y] = s.split("-");
     return `${y}-${m}-${d}`;
   }
-  const d = new Date(v);
-  if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return formatDateLocal(d);
   return s;
 }
 
@@ -169,7 +184,7 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: true });
 
         if (json.length < 2) {
           setError("El archivo no tiene suficientes filas (mínimo encabezado + 1 dato).");

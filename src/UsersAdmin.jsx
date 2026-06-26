@@ -3,11 +3,13 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import InsuredUploadModal from "./modules/policies/components/InsuredUploadModal";
@@ -91,6 +93,8 @@ export default function UsersAdmin({ companyId, currentUserId }) {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [userPolicies, setUserPolicies] = useState([]);
+  const [userPoliciesLoading, setUserPoliciesLoading] = useState(false);
 
   useEffect(() => {
     if (!companyId) return;
@@ -109,6 +113,45 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     );
     return () => unsub();
   }, [companyId]);
+
+  // Cargar pólizas Vida Grupo del usuario
+  useEffect(() => {
+    const tUid = normalizeUid(uid);
+    if (!tUid || policyType !== "VIDA_GRUPO") {
+      setUserPolicies([]);
+      return;
+    }
+    setUserPoliciesLoading(true);
+    const q = query(collection(db, "clientPolicies"), where("clientUid", "==", tUid));
+    const unsub = onSnapshot(
+      q,
+      async (snap) => {
+        const policies = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const policiesWithInsured = await Promise.all(
+          policies.map(async (p) => {
+            try {
+              const insuredSnap = await getDocs(collection(db, "clientPolicies", p.id, "insuredPeople"));
+              return {
+                ...p,
+                insuredCount: insuredSnap.size,
+                insuredPeople: insuredSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+              };
+            } catch (e) {
+              console.error(e);
+              return { ...p, insuredCount: 0, insuredPeople: [] };
+            }
+          })
+        );
+        setUserPolicies(policiesWithInsured);
+        setUserPoliciesLoading(false);
+      },
+      (err) => {
+        console.error(err);
+        setUserPoliciesLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [uid, policyType]);
 
   const filteredMembershipRows = useMemo(() => {
     const q = searchText.trim().toLowerCase();
@@ -411,6 +454,63 @@ export default function UsersAdmin({ companyId, currentUserId }) {
               </button>
             </div>
           </form>
+
+          {/* Pólizas Vida Grupo existentes */}
+          {policyType === "VIDA_GRUPO" && normalizeUid(uid) && (
+            <div style={{ marginTop: 16 }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Pólizas Vida Grupo</h4>
+              {userPoliciesLoading ? (
+                <p style={{ fontSize: 12, color: "#666" }}>Cargando pólizas...</p>
+              ) : userPolicies.length === 0 ? (
+                <p style={{ fontSize: 12, color: "#666" }}>No hay pólizas registradas para este usuario.</p>
+              ) : (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {userPolicies.map((p) => (
+                    <div key={p.id} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 10 }}>
+                      <div style={{ fontSize: 12, color: "#666" }}>Póliza ID: {p.id}</div>
+                      <div style={{ fontSize: 13, marginTop: 4 }}>
+                        <strong>Asegurados:</strong> {p.insuredCount || 0}
+                      </div>
+                      {p.insuredPeople && p.insuredPeople.length > 0 && (
+                        <div style={{ marginTop: 8, overflowX: "auto" }}>
+                          <table
+                            border="1"
+                            cellPadding="4"
+                            style={{ borderCollapse: "collapse", width: "100%", fontSize: 11 }}
+                          >
+                            <thead>
+                              <tr>
+                                <th>REG</th>
+                                <th>Nombre</th>
+                                <th>Cédula</th>
+                                <th>Sexo</th>
+                                <th>Fecha Nac.</th>
+                                <th>Edad</th>
+                                <th>Valor Mensual</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {p.insuredPeople.map((ip) => (
+                                <tr key={ip.id}>
+                                  <td>{ip.reg}</td>
+                                  <td>{ip.nombre}</td>
+                                  <td>{ip.cedula}</td>
+                                  <td>{ip.sexo}</td>
+                                  <td>{ip.fechaNacimiento}</td>
+                                  <td>{ip.edad}</td>
+                                  <td>{ip.valorMensual}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -418,7 +518,38 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         <InsuredUploadModal
           clientUid={normalizeUid(uid)}
           clientName={displayName || email}
-          onClose={() => setShowUploadModal(false)}
+          onClose={() => {
+            setShowUploadModal(false);
+            // Al cerrar el modal, recargar las pólizas del usuario
+            const tUid = normalizeUid(uid);
+            if (tUid && policyType === "VIDA_GRUPO") {
+              setUserPoliciesLoading(true);
+              const q = query(collection(db, "clientPolicies"), where("clientUid", "==", tUid));
+              getDocs(q).then(async (snap) => {
+                const policies = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+                const policiesWithInsured = await Promise.all(
+                  policies.map(async (pol) => {
+                    try {
+                      const insuredSnap = await getDocs(collection(db, "clientPolicies", pol.id, "insuredPeople"));
+                      return {
+                        ...pol,
+                        insuredCount: insuredSnap.size,
+                        insuredPeople: insuredSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+                      };
+                    } catch (e) {
+                      console.error(e);
+                      return { ...pol, insuredCount: 0, insuredPeople: [] };
+                    }
+                  })
+                );
+                setUserPolicies(policiesWithInsured);
+                setUserPoliciesLoading(false);
+              }).catch((err) => {
+                console.error(err);
+                setUserPoliciesLoading(false);
+              });
+            }
+          }}
         />
       )}
     </div>
