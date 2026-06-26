@@ -8,9 +8,11 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
-  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import InsuredUploadModal from "./modules/policies/components/InsuredUploadModal";
+
+const FIREBASE_API_KEY = "AIzaSyBVgl3sIuHlEgioYPWJnHnhU69_lnMz3Lw";
 
 function TextField({ label, value, onChange, placeholder, type = "text" }) {
   return (
@@ -75,16 +77,20 @@ export default function UsersAdmin({ companyId, currentUserId }) {
 
   const [uid, setUid] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isPlatformSuperAdmin, setIsPlatformSuperAdmin] = useState(false);
   const [userStatus, setUserStatus] = useState("ACTIVE");
+  const [generatedUid, setGeneratedUid] = useState("");
 
   const [role, setRole] = useState("USUARIO");
   const [membershipStatus, setMembershipStatus] = useState("ACTIVE");
+  const [policyType, setPolicyType] = useState("NINGUNA");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   useEffect(() => {
     if (!companyId) return;
@@ -119,6 +125,8 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     const tUid = normalizeUid(targetUid);
     setError("");
     setInfo("");
+    setGeneratedUid("");
+    setPassword("");
     if (!tUid) return;
 
     setUid(tUid);
@@ -131,11 +139,13 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         setDisplayName(u.displayName || "");
         setIsPlatformSuperAdmin(!!u.isPlatformSuperAdmin);
         setUserStatus(u.status || "ACTIVE");
+        setPolicyType(u.policyType || "NINGUNA");
       } else {
         setEmail("");
         setDisplayName("");
         setIsPlatformSuperAdmin(false);
         setUserStatus("ACTIVE");
+        setPolicyType("NINGUNA");
       }
 
       const memRef = doc(db, "companies", companyId, "memberships", tUid);
@@ -154,9 +164,25 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     }
   };
 
+  async function createUserInAuth(email, password) {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, returnSecureToken: true }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data?.error?.message || "Error creando usuario en Firebase Auth";
+      throw new Error(msg);
+    }
+    return data.localId; // UID generado por Firebase
+  }
+
   const save = async (e) => {
     e.preventDefault();
-    const tUid = normalizeUid(uid);
     setError("");
     setInfo("");
 
@@ -164,13 +190,34 @@ export default function UsersAdmin({ companyId, currentUserId }) {
       setError("companyId es obligatorio");
       return;
     }
-    if (!tUid) {
-      setError("UID es obligatorio");
-      return;
+
+    const isNew = !normalizeUid(uid);
+    let tUid = normalizeUid(uid);
+
+    if (isNew) {
+      if (!email.trim() || !password.trim()) {
+        setError("Para crear un usuario nuevo, email y contraseña son obligatorios.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+        return;
+      }
+    } else {
+      if (!tUid) {
+        setError("UID es obligatorio");
+        return;
+      }
     }
 
     setSaving(true);
     try {
+      if (isNew) {
+        tUid = await createUserInAuth(email.trim(), password.trim());
+        setGeneratedUid(tUid);
+        setUid(tUid);
+      }
+
       const userRef = doc(db, "users", tUid);
       const userSnap = await getDoc(userRef);
       const userPayload = {
@@ -178,6 +225,7 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         displayName: (displayName || "").trim(),
         isPlatformSuperAdmin: !!isPlatformSuperAdmin,
         status: userStatus,
+        policyType,
         updatedAt: serverTimestamp(),
         updatedBy: currentUserId || null,
       };
@@ -211,7 +259,7 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         await updateDoc(memRef, memPayload);
       }
 
-      setInfo("Guardado.");
+      setInfo(isNew ? `Usuario creado. UID: ${tUid}` : "Guardado.");
     } catch (err) {
       console.error(err);
       setError(err?.message || "Error guardando");
@@ -272,15 +320,21 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 14 }}>
           <h3 style={{ margin: 0 }}>Crear / editar</h3>
           <p style={{ marginTop: 8, color: "#666", fontSize: 12 }}>
-            V1 manual: necesitas el UID. Esto no crea usuarios en Firebase Auth.
+            Para crear un usuario nuevo, deja el campo UID vacío, llena email y contraseña. Para editar, selecciona un usuario de la tabla.
           </p>
 
           {error ? <div style={{ marginTop: 8, color: "#b00020" }}>{error}</div> : null}
           {info ? <div style={{ marginTop: 8, color: "#1b5e20" }}>{info}</div> : null}
+          {generatedUid ? (
+            <div style={{ marginTop: 8, color: "#0066cc", fontSize: 12, fontWeight: 600 }}>
+              UID generado: {generatedUid}
+            </div>
+          ) : null}
 
           <form onSubmit={save} style={{ marginTop: 12, display: "grid", gap: 12 }}>
-            <TextField label="UID" value={uid} onChange={setUid} placeholder="uid (Firebase Auth)" />
+            <TextField label="UID (dejar vacío para crear nuevo)" value={uid} onChange={setUid} placeholder="uid (Firebase Auth)" />
             <TextField label="Email" value={email} onChange={setEmail} placeholder="correo@dominio.com" type="email" />
+            <TextField label="Contraseña (solo para nuevos)" value={password} onChange={setPassword} placeholder="Mínimo 6 caracteres" type="password" />
             <TextField label="Nombre" value={displayName} onChange={setDisplayName} placeholder="Nombre" />
 
             <SelectField
@@ -290,6 +344,21 @@ export default function UsersAdmin({ companyId, currentUserId }) {
               options={[
                 { value: "ACTIVE", label: "ACTIVE" },
                 { value: "INACTIVE", label: "INACTIVE" },
+              ]}
+            />
+
+            <SelectField
+              label="Tipo de póliza asignada"
+              value={policyType}
+              onChange={setPolicyType}
+              options={[
+                { value: "NINGUNA", label: "Ninguna / General" },
+                { value: "VIDA_INDIVIDUAL", label: "Vida Individual" },
+                { value: "VIDA_GRUPO", label: "Vida Grupo" },
+                { value: "SALUD", label: "Salud" },
+                { value: "GENERALES", label: "Generales (Auto/Hogar)" },
+                { value: "ARL", label: "ARL" },
+                { value: "PENSIONES", label: "Pensiones" },
               ]}
             />
 
@@ -324,6 +393,18 @@ export default function UsersAdmin({ companyId, currentUserId }) {
               ]}
             />
 
+            {policyType === "VIDA_GRUPO" && normalizeUid(uid) && (
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(true)}
+                  style={{ fontSize: 13, color: "#0066cc", cursor: "pointer" }}
+                >
+                  + Cargar asegurados desde Excel
+                </button>
+              </div>
+            )}
+
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button type="submit" disabled={saving}>
                 {saving ? "Guardando..." : "Guardar"}
@@ -332,6 +413,14 @@ export default function UsersAdmin({ companyId, currentUserId }) {
           </form>
         </div>
       </div>
+
+      {showUploadModal && (
+        <InsuredUploadModal
+          clientUid={normalizeUid(uid)}
+          clientName={displayName || email}
+          onClose={() => setShowUploadModal(false)}
+        />
+      )}
     </div>
   );
 }

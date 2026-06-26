@@ -176,6 +176,7 @@ export default function App() {
       onChangeSection={setActiveSection}
       onGoHome={() => setActiveSection("home")}
       onSignOut={() => signOut(auth)}
+      canManageUsers={canManageUsers}
     >
       {renderSection()}
     </MainLayout>

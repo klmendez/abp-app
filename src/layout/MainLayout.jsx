@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "../layout/Sidebar";
 import Topbar from "../layout/Topbar";
 
-export default function MainLayout({ user, me, membership, activeSection, onChangeSection, onGoHome, children, onSignOut }) {
+export default function MainLayout({ user, me, membership, activeSection, onChangeSection, onGoHome, children, onSignOut, canManageUsers }) {
   const [isNavOpen, setIsNavOpen] = useState(false);
 
   useEffect(() => {
@@ -20,6 +20,7 @@ export default function MainLayout({ user, me, membership, activeSection, onChan
         onChangeSection={onChangeSection}
         isOpen={isNavOpen}
         onClose={() => setIsNavOpen(false)}
+        canManageUsers={canManageUsers}
       />
 
       {isNavOpen ? <button type="button" className="appBackdrop" aria-label="Cerrar navegación" onClick={() => setIsNavOpen(false)} /> : null}
