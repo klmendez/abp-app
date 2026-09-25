@@ -1,44 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   onSnapshot,
   query,
   serverTimestamp,
-  setDoc,
-  updateDoc,
+  writeBatch,
+  getDocFromServer,
   where,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+import * as XLSX from "xlsx";
+import { auth, db } from "./firebase";
 import InsuredUploadModal from "./modules/policies/components/InsuredUploadModal";
 
 const FIREBASE_API_KEY = "AIzaSyBVgl3sIuHlEgioYPWJnHnhU69_lnMz3Lw";
 
-function TextField({ label, value, onChange, placeholder, type = "text" }) {
+function TextField({ label, value, onChange, placeholder, type = "text", disabled = false }) {
   return (
-    <label style={{ display: "grid", gap: 6 }}>
-      <span style={{ fontSize: 12, color: "#333" }}>{label}</span>
+    <label className="userFormField">
+      <span>{label}</span>
       <input
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        style={{ padding: 10, border: "1px solid #e5e7eb", borderRadius: 10 }}
+        disabled={disabled}
       />
     </label>
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({ label, value, onChange, options, hint = "" }) {
   return (
-    <label style={{ display: "grid", gap: 6 }}>
-      <span style={{ fontSize: 12, color: "#333" }}>{label}</span>
+    <label className="userFormField">
+      <span>{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        style={{ padding: 10, border: "1px solid #e5e7eb", borderRadius: 10 }}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -46,17 +48,31 @@ function SelectField({ label, value, onChange, options }) {
           </option>
         ))}
       </select>
+      {hint ? <small>{hint}</small> : null}
     </label>
   );
 }
 
 function CheckboxField({ label, checked, onChange }) {
   return (
-    <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    <label className="userCheckboxField">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>{label}</span>
     </label>
   );
+}
+
+function formatExcelDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+
+  const date = value?.toDate ? value.toDate() : value instanceof Date ? value : null;
+  if (!date || Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function normalizeUid(uid) {
@@ -72,9 +88,73 @@ function roleLabel(role) {
   return role || "";
 }
 
+function policyTypeFromData(data) {
+  for (const key of ["policyType", "assignedPolicyType", "tipoPoliza", "tipoDePoliza", "ramo", "branch"]) {
+    if (typeof data?.[key] === "string" && data[key].trim()) return data[key].trim().toUpperCase().replace(/\s+/g, "_");
+  }
+  return "";
+}
+
+function policyLabel(type) {
+  return {
+    VIDA_GRUPO: "Vida grupo",
+    VIDA_INDIVIDUAL: "Vida individual",
+    SALUD: "Salud",
+    GENERALES: "Seguros generales",
+    ARL: "Riesgos laborales",
+    AUTOS: "Autos",
+    CUMPLIMIENTO: "Cumplimiento",
+    RESPONSABILIDAD_CIVIL: "Responsabilidad civil",
+    HOGAR: "Hogar",
+    PENSIONES: "Pensiones",
+    OTRA: "Otra póliza",
+  }[type] || type || "Póliza";
+}
+
+function isActivePolicy(policy) {
+  const status = String(policy?.status || policy?.estado || "ACTIVE").trim().toUpperCase();
+  return !["INACTIVE", "INACTIVA", "CANCELADA", "CANCELLED", "VOID"].includes(status);
+}
+
+const today = new Date();
+const CURRENT_PERIOD = {
+  monthKey: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`,
+  label: new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric" }).format(today),
+  start: new Date(today.getFullYear(), today.getMonth() - 1, 1),
+  end: new Date(today.getFullYear(), today.getMonth(), 1),
+  enabledUntil: new Date(today.getFullYear(), today.getMonth() + 1, 0),
+};
+
+const longDate = (date) => new Intl.DateTimeFormat("es-CO", {
+  day: "numeric", month: "long", year: "numeric",
+}).format(date);
+
+const formatCurrency = (value) => new Intl.NumberFormat("es-CO", {
+  style: "currency", currency: "COP", maximumFractionDigits: 0,
+}).format(Number(value) || 0);
+
+function calculatedAge(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return "";
+  const [year, month, day] = value.split("-").map(Number);
+  const birthDate = new Date(year, month - 1, day);
+  const now = new Date();
+  if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day || birthDate > now) return "";
+  return now.getFullYear() - year - (now.getMonth() + 1 < month || (now.getMonth() + 1 === month && now.getDate() < day) ? 1 : 0);
+}
+
+function orderedPeople(people) {
+  return [...(people || [])].sort((a, b) => {
+    const statusOrder = Number(a.estado === "DESVINCULADO") - Number(b.estado === "DESVINCULADO");
+    if (statusOrder) return statusOrder;
+    return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es");
+  });
+}
+
 export default function UsersAdmin({ companyId, currentUserId }) {
   const [searchText, setSearchText] = useState("");
   const [membershipRows, setMembershipRows] = useState([]);
+  const [profileRows, setProfileRows] = useState([]);
+  const [portalPolicies, setPortalPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [uid, setUid] = useState("");
@@ -90,11 +170,15 @@ export default function UsersAdmin({ companyId, currentUserId }) {
   const [policyType, setPolicyType] = useState("NINGUNA");
 
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [userPolicies, setUserPolicies] = useState([]);
   const [userPoliciesLoading, setUserPoliciesLoading] = useState(false);
+  const [userConfirmations, setUserConfirmations] = useState([]);
+  const [userConfirmationsLoading, setUserConfirmationsLoading] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   useEffect(() => {
     if (!companyId) return;
@@ -102,8 +186,34 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     const q = query(collection(db, "companies", companyId, "memberships"));
     const unsub = onSnapshot(
       q,
-      (snap) => {
-        setMembershipRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      async (snap) => {
+        const memberships = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const hydratedRows = await Promise.all(
+          memberships.map(async (membership) => {
+            try {
+              const userSnap = await getDoc(doc(db, "users", membership.id));
+              const profile = userSnap.exists() ? userSnap.data() : {};
+              return {
+                ...membership,
+                profileExists: userSnap.exists(),
+                email: profile.email || membership.email || "",
+                displayName: profile.displayName || profile.name || membership.displayName || "",
+                userStatus: profile.status || "",
+                policyType: profile.policyType || "",
+              };
+            } catch (error) {
+              console.error(error);
+              return {
+                ...membership,
+                profileExists: false,
+                email: membership.email || "",
+                displayName: membership.displayName || "",
+                userStatus: "",
+              };
+            }
+          })
+        );
+        setMembershipRows(hydratedRows);
         setLoading(false);
       },
       (err) => {
@@ -114,55 +224,144 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     return () => unsub();
   }, [companyId]);
 
-  // Cargar pólizas Vida Grupo del usuario
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "users"),
+      (snap) => setProfileRows(snap.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      (err) => console.error(err)
+    );
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "clientPolicies"),
+      (snap) => setPortalPolicies(snap.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      (err) => console.error(err)
+    );
+    return () => unsub();
+  }, []);
+
+  const rowsWithPortalPolicies = useMemo(() => {
+    const knownIds = new Set(membershipRows.map((row) => row.id));
+    const profileOnlyRows = profileRows
+      .filter((profile) => !knownIds.has(profile.id))
+      .map((profile) => ({ ...profile, profileExists: true, userStatus: profile.status || "ACTIVE", isProfileOnly: true }));
+    profileOnlyRows.forEach((row) => knownIds.add(row.id));
+    const portalOnlyRows = portalPolicies
+      .filter((policy) => policy.clientUid && !knownIds.has(policy.clientUid))
+      .reduce((rows, policy) => {
+        if (!rows.some((row) => row.id === policy.clientUid)) {
+          rows.push({ id: policy.clientUid, profileExists: false, email: policy.clientEmail || policy.email || "", displayName: policy.clientName || policy.nombreCliente || "", userStatus: "ACTIVE", status: "ACTIVE", role: "USUARIO", isPortalOnly: true });
+        }
+        return rows;
+      }, []);
+    return [...membershipRows, ...profileOnlyRows, ...portalOnlyRows].map((row) => {
+    const userPolicies = portalPolicies.filter((policy) => policy.clientUid === row.id && isActivePolicy(policy));
+    const branches = [...new Set(
+      userPolicies
+        .map(policyTypeFromData)
+        .filter(Boolean)
+    )];
+    return {
+      ...row,
+      activeBranches: branches.map(policyLabel),
+    };
+    });
+  }, [membershipRows, portalPolicies, profileRows]);
+
+  useEffect(() => {
+    if (!isEditorOpen) return;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && !saving && !deleting) setIsEditorOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isEditorOpen, saving, deleting]);
+
+  // Cargar la información que el cliente registró desde el portal de clientes.
   useEffect(() => {
     const tUid = normalizeUid(uid);
-    if (!tUid || policyType !== "VIDA_GRUPO") {
+    if (!tUid) {
       setUserPolicies([]);
+      setUserConfirmations([]);
       return;
     }
     setUserPoliciesLoading(true);
     const q = query(collection(db, "clientPolicies"), where("clientUid", "==", tUid));
+    let policyDocs = [];
+    const peopleByPolicy = new Map();
+    const peopleUnsubscribers = new Map();
+    const publish = () => setUserPolicies(policyDocs.map((policy) => {
+      const insuredPeople = peopleByPolicy.get(policy.id) || [];
+      return { ...policy, insuredCount: insuredPeople.length, insuredPeople };
+    }));
     const unsub = onSnapshot(
       q,
-      async (snap) => {
-        const policies = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const policiesWithInsured = await Promise.all(
-          policies.map(async (p) => {
-            try {
-              const insuredSnap = await getDocs(collection(db, "clientPolicies", p.id, "insuredPeople"));
-              return {
-                ...p,
-                insuredCount: insuredSnap.size,
-                insuredPeople: insuredSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
-              };
-            } catch (e) {
-              console.error(e);
-              return { ...p, insuredCount: 0, insuredPeople: [] };
-            }
-          })
-        );
-        setUserPolicies(policiesWithInsured);
-        setUserPoliciesLoading(false);
+      (snap) => {
+        policyDocs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        peopleUnsubscribers.forEach((unsubscribe) => unsubscribe());
+        peopleUnsubscribers.clear();
+        peopleByPolicy.clear();
+        policyDocs.forEach((policy) => {
+          const unsubscribePeople = onSnapshot(
+            collection(db, "clientPolicies", policy.id, "insuredPeople"),
+            (peopleSnap) => {
+              peopleByPolicy.set(policy.id, peopleSnap.docs.map((item) => ({ id: item.id, ...item.data() })));
+              publish();
+              setUserPoliciesLoading(false);
+            },
+            (err) => console.error(err)
+          );
+          peopleUnsubscribers.set(policy.id, unsubscribePeople);
+        });
+        publish();
+        if (policyDocs.length === 0) setUserPoliciesLoading(false);
       },
       (err) => {
         console.error(err);
         setUserPoliciesLoading(false);
       }
     );
-    return () => unsub();
+    return () => {
+      unsub();
+      peopleUnsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
   }, [uid, policyType]);
+
+  useEffect(() => {
+    const tUid = normalizeUid(uid);
+    if (!tUid) return;
+    setUserConfirmationsLoading(true);
+    const unsubscribe = onSnapshot(
+      query(collection(db, "clientChangeNotifications"), where("clientUid", "==", tUid)),
+      (snap) => {
+        setUserConfirmations(snap.docs.map((item) => ({ id: item.id, ...item.data() })));
+        setUserConfirmationsLoading(false);
+      },
+      (err) => {
+        console.error(err);
+        setUserConfirmations([]);
+        setUserConfirmationsLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, [uid]);
 
   const filteredMembershipRows = useMemo(() => {
     const q = searchText.trim().toLowerCase();
-    if (!q) return membershipRows;
-    return membershipRows.filter((r) => {
+    if (!q) return rowsWithPortalPolicies;
+    return rowsWithPortalPolicies.filter((r) => {
       const id = (r.id || "").toLowerCase();
       const role = (r.role || "").toLowerCase();
       const status = (r.status || "").toLowerCase();
-      return id.includes(q) || role.includes(q) || status.includes(q);
+      const name = (r.displayName || "").toLowerCase();
+      const email = (r.email || "").toLowerCase();
+      const userStatus = (r.userStatus || "").toLowerCase();
+      const branches = (r.activeBranches || []).join(" ").toLowerCase();
+      return id.includes(q) || name.includes(q) || email.includes(q) || role.includes(q) || status.includes(q) || userStatus.includes(q) || branches.includes(q);
     });
-  }, [membershipRows, searchText]);
+  }, [rowsWithPortalPolicies, searchText]);
 
   const loadForEdit = async (targetUid) => {
     const tUid = normalizeUid(targetUid);
@@ -173,6 +372,7 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     if (!tUid) return;
 
     setUid(tUid);
+    setIsEditorOpen(true);
     try {
       const userRef = doc(db, "users", tUid);
       const userSnap = await getDoc(userRef);
@@ -207,6 +407,108 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     }
   };
 
+  const startNewUser = () => {
+    setUid("");
+    setEmail("");
+    setPassword("");
+    setDisplayName("");
+    setIsPlatformSuperAdmin(false);
+    setUserStatus("ACTIVE");
+    setRole("USUARIO");
+    setMembershipStatus("ACTIVE");
+    setPolicyType("NINGUNA");
+    setGeneratedUid("");
+    setError("");
+    setInfo("");
+    setIsEditorOpen(true);
+  };
+
+  const resetPassword = async () => {
+    if (!email.trim()) {
+      setError("El usuario no tiene un correo registrado para restablecer la contraseña.");
+      return;
+    }
+    setError("");
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setInfo(`Enviamos el enlace de restablecimiento a ${email.trim()}.`);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "No se pudo enviar el enlace de restablecimiento.");
+    }
+  };
+
+  const deleteUser = async () => {
+    const tUid = normalizeUid(uid);
+    if (!tUid) return;
+    if (tUid === currentUserId) {
+      setError("No puedes eliminar tu propio acceso.");
+      return;
+    }
+    const label = displayName || email || tUid;
+    if (!window.confirm(`¿Eliminar el acceso de ${label}? Las pólizas y los datos registrados por el cliente se conservarán.`)) return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      await Promise.all([
+        deleteDoc(doc(db, "users", tUid)),
+        deleteDoc(doc(db, "companies", companyId, "memberships", tUid)),
+      ]);
+      setInfo("Usuario eliminado de ABP-gestión. Sus datos del portal de clientes se conservaron.");
+      setIsEditorOpen(false);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "No se pudo eliminar el usuario.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const downloadInsuredExcel = (policy) => {
+    const rows = orderedPeople(policy.insuredPeople).map((person, index) => ({
+      "REG.": index + 1,
+      Nombre: person.nombre || "",
+      "Cédula": person.cedula || "",
+      Sexo: person.sexo || "",
+      "Fecha de Nacimiento": person.fechaNacimiento || "",
+      EDAD: calculatedAge(person.fechaNacimiento),
+      EXTRAPRIMA: person.extraprima ?? "",
+      "Valor Mensual Por Asegurado": person.valorMensual ?? "",
+      Observaciones: person.observaciones || "",
+      novedad: person.tipoNovedad || person.tipoNovedadAnterior || (person.estado === "DESVINCULADO" ? "RETIRO" : ""),
+      "Fecha novedad":
+        (person.tipoNovedad || person.tipoNovedadAnterior || (person.estado === "DESVINCULADO" ? "RETIRO" : "")) === "RETIRO"
+          ? formatExcelDate(person.fechaDesvinculacion)
+          : (person.tipoNovedad || person.tipoNovedadAnterior || "") === "INGRESO"
+            ? formatExcelDate(person.fechaVinculacion)
+            : "",
+      "Fecha ingreso": formatExcelDate(person.fechaVinculacion),
+      "Fecha retiro": formatExcelDate(person.fechaDesvinculacion),
+    }));
+    const sheet = XLSX.utils.json_to_sheet(rows, {
+      header: [
+        "REG.",
+        "Nombre",
+        "Cédula",
+        "Sexo",
+        "Fecha de Nacimiento",
+        "EDAD",
+        "EXTRAPRIMA",
+        "Valor Mensual Por Asegurado",
+        "Observaciones",
+        "novedad",
+        "Fecha novedad",
+        "Fecha ingreso",
+        "Fecha retiro",
+      ],
+    });
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "Asegurados");
+    const policyNumber = policy.policyNumber || policy.numeroPoliza || policy.number || policy.id;
+    XLSX.writeFile(book, `asegurados_${String(policyNumber).replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`);
+  };
+
   async function createUserInAuth(email, password) {
     const res = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`,
@@ -221,7 +523,7 @@ export default function UsersAdmin({ companyId, currentUserId }) {
       const msg = data?.error?.message || "Error creando usuario en Firebase Auth";
       throw new Error(msg);
     }
-    return data.localId; // UID generado por Firebase
+    return { uid: data.localId, idToken: data.idToken };
   }
 
   const save = async (e) => {
@@ -236,6 +538,7 @@ export default function UsersAdmin({ companyId, currentUserId }) {
 
     const isNew = !normalizeUid(uid);
     let tUid = normalizeUid(uid);
+    let createdAccount = null;
 
     if (isNew) {
       if (!email.trim() || !password.trim()) {
@@ -256,7 +559,8 @@ export default function UsersAdmin({ companyId, currentUserId }) {
     setSaving(true);
     try {
       if (isNew) {
-        tUid = await createUserInAuth(email.trim(), password.trim());
+        createdAccount = await createUserInAuth(email.trim(), password.trim());
+        tUid = createdAccount.uid;
         setGeneratedUid(tUid);
         setUid(tUid);
       }
@@ -273,14 +577,15 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         updatedBy: currentUserId || null,
       };
 
+      const batch = writeBatch(db);
       if (!userSnap.exists()) {
-        await setDoc(userRef, {
+        batch.set(userRef, {
           ...userPayload,
           createdAt: serverTimestamp(),
           createdBy: currentUserId || null,
         });
       } else {
-        await updateDoc(userRef, userPayload);
+        batch.update(userRef, userPayload);
       }
 
       const memRef = doc(db, "companies", companyId, "memberships", tUid);
@@ -293,77 +598,125 @@ export default function UsersAdmin({ companyId, currentUserId }) {
       };
 
       if (!memSnap.exists()) {
-        await setDoc(memRef, {
+        batch.set(memRef, {
           ...memPayload,
           createdAt: serverTimestamp(),
           createdBy: currentUserId || null,
         });
       } else {
-        await updateDoc(memRef, memPayload);
+        batch.update(memRef, memPayload);
       }
 
+      await batch.commit();
       setInfo(isNew ? `Usuario creado. UID: ${tUid}` : "Guardado.");
+      setIsEditorOpen(false);
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Error guardando");
+      let rollbackMessage = "";
+      if (createdAccount) {
+        try {
+          // A failed response can follow a successful commit. Never delete Auth
+          // unless server reads confirm both documents are absent.
+          const [profile, membership] = await Promise.all([
+            getDocFromServer(doc(db, "users", tUid)),
+            getDocFromServer(doc(db, "companies", companyId, "memberships", tUid)),
+          ]);
+          if (!profile.exists() && !membership.exists()) {
+            const response = await fetch(
+              `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`,
+              { method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ idToken: createdAccount.idToken }) },
+            );
+            if (!response.ok) throw new Error("No se pudo revertir la cuenta");
+            setUid("");
+            setGeneratedUid("");
+            rollbackMessage = " La cuenta temporal se revirtió; puedes volver a intentarlo.";
+          } else {
+            rollbackMessage = " La cuenta se conserva. Revisa el usuario y vuelve a guardar si es necesario.";
+          }
+        } catch {
+          rollbackMessage = " No se pudo confirmar la reversión. Se conserva el UID para recuperar el usuario sin crear otra cuenta.";
+        }
+      }
+      setError((err?.message || "Error guardando") + rollbackMessage);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h2 style={{ margin: 0 }}>Usuarios</h2>
+    <div className="usersAdminLayout" style={{ display: "grid", gap: 16 }}>
+      <h2 style={{ margin: 0 }}>{isEditorOpen ? (uid ? "Información del usuario" : "Crear usuario") : "Usuarios"}</h2>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      {!isEditorOpen ? <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
         <input
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          placeholder="Buscar por uid/rol/estado..."
+          placeholder="Buscar por nombre, correo, rol o estado..."
+          aria-label="Buscar usuarios"
           style={{ padding: 10, border: "1px solid #e5e7eb", borderRadius: 10, minWidth: 260 }}
         />
-      </div>
+        <button type="button" className="btn btnPrimary addButton" onClick={startNewUser} aria-label="Crear usuario" title="Crear usuario">
+          +
+        </button>
+      </div> : null}
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
-        <div>
-          {loading ? (
-            <p>Cargando...</p>
-          ) : filteredMembershipRows.length === 0 ? (
-            <p>No hay memberships en esta empresa.</p>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
-                <thead>
-                  <tr>
-                    <th>UID</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                    <th></th>
+      {info && !isEditorOpen ? <div role="status" className="userSuccessMessage">{info}</div> : null}
+
+      {!isEditorOpen && (loading ? (
+        <p>Cargando usuarios...</p>
+      ) : filteredMembershipRows.length === 0 ? (
+        <p>No hay usuarios que coincidan con la búsqueda.</p>
+      ) : (
+        <div className="tableWrap" role="region" aria-label="Tabla de usuarios" tabIndex={0}>
+          <table className="table usersTable">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Correo</th>
+                <th>Ramos actuales · {CURRENT_PERIOD.label}</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMembershipRows.map((r) => {
+                const isActive = r.userStatus !== "INACTIVE" && r.status !== "INACTIVE";
+                const userLabel = r.displayName || r.email?.split("@")[0] || r.id;
+                const statusLabel = r.isPortalOnly ? "Activo (portal)" : r.isProfileOnly ? "Sin empresa" : !r.profileExists ? "Sin perfil" : isActive ? "Activo" : "Inactivo";
+                return (
+                  <tr key={r.id}>
+                    <td title={r.id}>{userLabel}</td>
+                    <td>{r.email || "Sin correo registrado"}</td>
+                    <td title={r.activeBranches?.join(", ") || "No hay ramos activos registrados en el portal de clientes"}>
+                      {r.activeBranches?.length ? r.activeBranches.join(", ") : "Sin ramos activos"}
+                    </td>
+                    <td>{roleLabel(r.role) || "Sin rol"}</td>
+                    <td><span className={`statusBadge status-${isActive ? "ACTIVE" : "INACTIVE"}`}>{statusLabel}</span></td>
+                    <td>
+                      <button type="button" onClick={() => loadForEdit(r.id)} aria-label={`Editar a ${r.displayName || r.email || r.id}`}>
+                        Editar
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredMembershipRows.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.id}</td>
-                      <td>{roleLabel(r.role)}</td>
-                      <td>{r.status}</td>
-                      <td>
-                        <button type="button" onClick={() => loadForEdit(r.id)}>
-                          Editar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                );
+              })}
+            </tbody>
+          </table>
         </div>
+      ))}
 
-        <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 14 }}>
-          <h3 style={{ margin: 0 }}>Crear / editar</h3>
-          <p style={{ marginTop: 8, color: "#666", fontSize: 12 }}>
-            Para crear un usuario nuevo, deja el campo UID vacío, llena email y contraseña. Para editar, selecciona un usuario de la tabla.
+      {isEditorOpen ? (
+        <section className="userEditorPage" aria-labelledby="users-editor-title">
+        <button type="button" className="backToUsers" onClick={() => setIsEditorOpen(false)} disabled={saving || deleting}>← Volver a usuarios</button>
+        <div className="usersModal" aria-labelledby="users-editor-title">
+          <div className="usersModalHeader">
+            <h3 id="users-editor-title" style={{ margin: 0 }}>{uid ? "Editar usuario" : "Crear usuario"}</h3>
+            <button type="button" className="btn" onClick={() => setIsEditorOpen(false)} disabled={saving || deleting} aria-label="Cerrar ventana">×</button>
+          </div>
+          <p className="userEditorIntro">
+            Administra el acceso de la cuenta y consulta sus pólizas registradas en el portal de clientes.
           </p>
 
           {error ? <div style={{ marginTop: 8, color: "#b00020" }}>{error}</div> : null}
@@ -374,14 +727,20 @@ export default function UsersAdmin({ companyId, currentUserId }) {
             </div>
           ) : null}
 
-          <form onSubmit={save} style={{ marginTop: 12, display: "grid", gap: 12 }}>
-            <TextField label="UID (dejar vacío para crear nuevo)" value={uid} onChange={setUid} placeholder="uid (Firebase Auth)" />
-            <TextField label="Email" value={email} onChange={setEmail} placeholder="correo@dominio.com" type="email" />
-            <TextField label="Contraseña (solo para nuevos)" value={password} onChange={setPassword} placeholder="Mínimo 6 caracteres" type="password" />
+          <form className="userEditForm" onSubmit={save}>
+            {uid ? <TextField label="UID" value={uid} onChange={setUid} placeholder="uid (Firebase Auth)" disabled /> : null}
+            <TextField label="Correo" value={email} onChange={setEmail} placeholder="correo@dominio.com" type="email" />
+            {!uid ? <TextField label="Contraseña" value={password} onChange={setPassword} placeholder="Mínimo 6 caracteres" type="password" /> : null}
+            {uid ? (
+              <div className="passwordResetPanel">
+                <span>La contraseña no se puede ver ni recuperar desde Firebase.</span>
+                <button type="button" className="userSecondaryButton" onClick={resetPassword}>Enviar enlace para restablecer</button>
+              </div>
+            ) : null}
             <TextField label="Nombre" value={displayName} onChange={setDisplayName} placeholder="Nombre" />
 
             <SelectField
-              label="Estado usuario (users/{uid})"
+              label="Estado de la cuenta"
               value={userStatus}
               onChange={setUserStatus}
               options={[
@@ -391,9 +750,10 @@ export default function UsersAdmin({ companyId, currentUserId }) {
             />
 
             <SelectField
-              label="Tipo de póliza asignada"
+              label="Ramo principal de acceso"
               value={policyType}
               onChange={setPolicyType}
+              hint="Es una referencia de acceso; el cliente puede tener varias pólizas en el portal."
               options={[
                 { value: "NINGUNA", label: "Ninguna / General" },
                 { value: "VIDA_INDIVIDUAL", label: "Vida Individual" },
@@ -401,7 +761,12 @@ export default function UsersAdmin({ companyId, currentUserId }) {
                 { value: "SALUD", label: "Salud" },
                 { value: "GENERALES", label: "Generales (Auto/Hogar)" },
                 { value: "ARL", label: "ARL" },
+                { value: "AUTOS", label: "Autos" },
+                { value: "CUMPLIMIENTO", label: "Cumplimiento" },
+                { value: "RESPONSABILIDAD_CIVIL", label: "Responsabilidad civil" },
+                { value: "HOGAR", label: "Hogar" },
                 { value: "PENSIONES", label: "Pensiones" },
+                { value: "OTRA", label: "Otra póliza" },
               ]}
             />
 
@@ -411,10 +776,10 @@ export default function UsersAdmin({ companyId, currentUserId }) {
               onChange={(v) => setIsPlatformSuperAdmin(v)}
             />
 
-            <div style={{ height: 1, background: "#eee" }} />
+            <div className="userFormDivider" />
 
             <SelectField
-              label={`Rol en empresa (companies/${companyId}/memberships/{uid})`}
+              label="Rol en empresa"
               value={role}
               onChange={setRole}
               options={[
@@ -427,7 +792,7 @@ export default function UsersAdmin({ companyId, currentUserId }) {
             />
 
             <SelectField
-              label="Estado membership"
+              label="Estado de acceso en empresa"
               value={membershipStatus}
               onChange={setMembershipStatus}
               options={[
@@ -436,47 +801,85 @@ export default function UsersAdmin({ companyId, currentUserId }) {
               ]}
             />
 
-            {policyType === "VIDA_GRUPO" && normalizeUid(uid) && (
+            {policyType !== "NINGUNA" && normalizeUid(uid) && (
               <div style={{ display: "flex", justifyContent: "flex-start" }}>
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(true)}
-                  style={{ fontSize: 13, color: "#0066cc", cursor: "pointer" }}
+                  className="userSecondaryButton"
                 >
-                  + Cargar asegurados desde Excel
+                  + Crear póliza y cargar asegurados
                 </button>
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button type="submit" disabled={saving}>
+            <div className="userEditorActions">
+              {uid ? <button type="button" className="dangerButton" onClick={deleteUser} disabled={saving || deleting}>{deleting ? "Eliminando..." : "Eliminar usuario"}</button> : <span />}
+              <button type="submit" disabled={saving || deleting}>
                 {saving ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </form>
 
-          {/* Pólizas Vida Grupo existentes */}
-          {policyType === "VIDA_GRUPO" && normalizeUid(uid) && (
-            <div style={{ marginTop: 16 }}>
-              <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Pólizas Vida Grupo</h4>
+          {normalizeUid(uid) && (
+            <section className="userPortalData" aria-labelledby="user-portal-data-title">
+              <div>
+                <h4 id="user-portal-data-title" style={{ margin: "0 0 4px", fontSize: 14 }}>Pólizas del cliente ({userPolicies.length})</h4>
+                <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>
+                  Datos registrados por este cliente en abp-insurance.
+                </p>
+              </div>
               {userPoliciesLoading ? (
-                <p style={{ fontSize: 12, color: "#666" }}>Cargando pólizas...</p>
+                <p style={{ fontSize: 12, color: "#666" }}>Cargando información del cliente...</p>
               ) : userPolicies.length === 0 ? (
-                <p style={{ fontSize: 12, color: "#666" }}>No hay pólizas registradas para este usuario.</p>
+                <p style={{ fontSize: 12, color: "#666" }}>Este cliente aún no ha registrado pólizas desde el portal.</p>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
                   {userPolicies.map((p) => (
-                    <div key={p.id} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 10 }}>
-                      <div style={{ fontSize: 12, color: "#666" }}>Póliza ID: {p.id}</div>
-                      <div style={{ fontSize: 13, marginTop: 4 }}>
-                        <strong>Asegurados:</strong> {p.insuredCount || 0}
+                    <article key={p.id} className="userPortalPolicy">
+                      {(() => {
+                        const people = orderedPeople(p.insuredPeople);
+                        const activePeople = people.filter((person) => person.estado !== "DESVINCULADO");
+                        const totalMonthly = activePeople.reduce((sum, person) => sum + (Number(person.valorMensual) || 0), 0);
+                        const confirmation = userConfirmations.find((item) =>
+                          item.policyId === p.id && item.action === "confirm_month" && item.monthKey === CURRENT_PERIOD.monthKey
+                        );
+                        const confirmationText = userConfirmationsLoading
+                          ? "Consultando…"
+                          : confirmation
+                            ? confirmation.status === "PENDING" ? "Enviada · pendiente" : "Confirmada"
+                            : "Por confirmar";
+                        return (
+                          <>
+                      <div className="userPortalPolicyHeader">
+                        <div>
+                          <div style={{ fontSize: 13 }}>{policyLabel(policyTypeFromData(p))}</div>
+                          <div style={{ fontSize: 11, color: "#64748b" }}>
+                            {p.policyNumber || p.numeroPoliza || p.number ? `Póliza ${p.policyNumber || p.numeroPoliza || p.number}` : `ID: ${p.id}`}
+                          </div>
+                        </div>
+                        <span className={`statusBadge status-${isActivePolicy(p) ? "ACTIVE" : "INACTIVE"}`}>
+                          {isActivePolicy(p) ? "Activa" : "Inactiva"}
+                        </span>
+                      </div>
+                      <dl className="userPortalPolicyMeta">
+                        <div><dt>Período habilitado</dt><dd>{longDate(CURRENT_PERIOD.start)} al {longDate(CURRENT_PERIOD.end)}</dd></div>
+                        <div><dt>Disponible hasta</dt><dd>{longDate(CURRENT_PERIOD.enabledUntil)}</dd></div>
+                        <div><dt>Aseguradora</dt><dd>{p.insurer || p.aseguradora || "No registrada"}</dd></div>
+                      </dl>
+                      <div className="userPortalSummary" aria-label={`Resumen de ${policyLabel(policyTypeFromData(p))}`}>
+                        <div><span>Asegurados activos</span><strong>{activePeople.length}</strong></div>
+                        <div><span>Total mensual de activos</span><strong>{formatCurrency(totalMonthly)}</strong></div>
+                        <div><span>Confirmación del mes</span><strong>{confirmationText}</strong></div>
                       </div>
                       {p.insuredPeople && p.insuredPeople.length > 0 && (
-                        <div style={{ marginTop: 8, overflowX: "auto" }}>
+                        <>
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                          <button type="button" className="userExcelButton" onClick={() => downloadInsuredExcel(p)}>Descargar Excel</button>
+                        </div>
+                        <div className="tableWrap" style={{ marginTop: 8 }} role="region" aria-label={`Asegurados de la póliza ${p.id}`} tabIndex={0}>
                           <table
-                            border="1"
-                            cellPadding="4"
-                            style={{ borderCollapse: "collapse", width: "100%", fontSize: 11 }}
+                            className="table tableCompact"
                           >
                             <thead>
                               <tr>
@@ -486,38 +889,50 @@ export default function UsersAdmin({ companyId, currentUserId }) {
                                 <th>Sexo</th>
                                 <th>Fecha Nac.</th>
                                 <th>Edad</th>
+                                <th>Estado</th>
+                                <th>Vinculación</th>
+                                <th>Retiro</th>
                                 <th>Valor Mensual</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {p.insuredPeople.map((ip) => (
+                              {people.map((ip, index) => (
                                 <tr key={ip.id}>
-                                  <td>{ip.reg}</td>
+                                  <td>{index + 1}</td>
                                   <td>{ip.nombre}</td>
                                   <td>{ip.cedula}</td>
                                   <td>{ip.sexo}</td>
                                   <td>{ip.fechaNacimiento}</td>
-                                  <td>{ip.edad}</td>
+                                  <td>{calculatedAge(ip.fechaNacimiento) || "-"}</td>
+                                  <td>{ip.estado || "ACTIVO"}</td>
+                                  <td>{ip.fechaVinculacion || "-"}</td>
+                                  <td>{ip.fechaDesvinculacion || "-"}</td>
                                   <td>{ip.valorMensual}</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
+                        </>
                       )}
-                    </div>
+                          </>
+                        );
+                      })()}
+                    </article>
                   ))}
                 </div>
               )}
-            </div>
+            </section>
           )}
         </div>
-      </div>
+        </section>
+      ) : null}
 
       {showUploadModal && (
         <InsuredUploadModal
           clientUid={normalizeUid(uid)}
           clientName={displayName || email}
+          policyType={policyType}
           onClose={() => {
             setShowUploadModal(false);
             // Al cerrar el modal, recargar las pólizas del usuario

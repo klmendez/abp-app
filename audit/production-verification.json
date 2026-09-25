@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-17T18:00:58.374Z",
+  "release": {
+    "name": "projects/abp-agencia-de-seguros/releases/cloud.firestore",
+    "rulesetName": "projects/abp-agencia-de-seguros/rulesets/2e63640b-2d7b-4d50-be32-16fccfa678be",
+    "createTime": "2026-02-15T18:53:46.426656Z",
+    "updateTime": "2026-09-17T17:58:56.342392Z"
+  },
+  "rulesMatch": true,
+  "sites": [
+    {
+      "url": "https://abp-agencia-de-seguros.web.app/",
+      "status": 200,
+      "indexMatches": true,
+      "assets": [
+        {
+          "asset": "/assets/index-CNbF7Pgx.js",
+          "status": 200,
+          "matches": true
+        },
+        {
+          "asset": "/assets/index-NoFw3mHB.css",
+          "status": 200,
+          "matches": true
+        }
+      ]
+    },
+    {
+      "url": "https://abpsegurosltda.com/",
+      "status": 200,
+      "indexMatches": true,
+      "assets": [
+        {
+          "asset": "./assets/index-DvNqQAlf.js",
+          "status": 200,
+          "matches": true
+        },
+        {
+          "asset": "./assets/index-DQK7t2JY.css",
+          "status": 200,
+          "matches": true
+        }
+      ]
+    }
+  ]
+}

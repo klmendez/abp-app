@@ -120,15 +120,25 @@ function findHeaderRow(json, maxScan = 15) {
   return { rowIndex: bestRow, count: bestCount };
 }
 
-export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
+export default function InsuredUploadModal({ clientUid, clientName, policyType = "VIDA_GRUPO", onClose }) {
   const [rows, setRows] = useState([]);
-  const [columns, setColumns] = useState({});
   const [headerRowIndex, setHeaderRowIndex] = useState(1);
   const [rawJson, setRawJson] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [policyNumber, setPolicyNumber] = useState("");
+  const [insurer, setInsurer] = useState("");
+  const [riskClass, setRiskClass] = useState("");
+  const [plate, setPlate] = useState("");
+  const [vehicle, setVehicle] = useState("");
+  const [contractNumber, setContractNumber] = useState("");
+  const [contractor, setContractor] = useState("");
+  const [insuredValue, setInsuredValue] = useState("");
   const fileRef = useRef(null);
+  const usesInsuredPeople = ["VIDA_GRUPO", "VIDA_INDIVIDUAL", "SALUD"].includes(policyType);
 
   const parseFromRow = (json, headerIdx) => {
     const headers = json[headerIdx];
@@ -145,7 +155,6 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
       return;
     }
 
-    setColumns(detected);
     const parsedRows = [];
     for (let i = headerIdx + 1; i < json.length; i++) {
       const r = json[i];
@@ -218,8 +227,16 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
       setError("clientUid es obligatorio");
       return;
     }
-    if (rows.length === 0) {
+    if (usesInsuredPeople && rows.length === 0) {
       setError("No hay datos para guardar");
+      return;
+    }
+    if (!startDate) {
+      setError("Indica el inicio de vigencia de la póliza.");
+      return;
+    }
+    if (endDate && endDate < startDate) {
+      setError("La fecha final no puede ser anterior al inicio de vigencia.");
       return;
     }
     setUploading(true);
@@ -230,23 +247,33 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
       await setDoc(policyRef, {
         clientUid,
         clientName: clientName || "",
-        policyType: "VIDA_GRUPO",
+        policyType,
+        status: "ACTIVE",
+        startDate,
+        ...(endDate ? { endDate } : {}),
+        ...(policyNumber.trim() ? { policyNumber: policyNumber.trim() } : {}),
+        ...(insurer.trim() ? { insurer: insurer.trim() } : {}),
+        ...(policyType === "ARL" ? { riskClass: riskClass.trim() } : {}),
+        ...(policyType === "AUTOS" ? { plate: plate.trim(), vehicle: vehicle.trim() } : {}),
+        ...(policyType === "CUMPLIMIENTO" ? { contractNumber: contractNumber.trim(), contractor: contractor.trim(), insuredValue: Number(insuredValue) || 0 } : {}),
         createdAt: serverTimestamp(),
       });
 
       // Guardar asegurados
       const insuredCol = collection(db, "clientPolicies", policyRef.id, "insuredPeople");
-      for (const row of rows) {
-        const personRef = doc(insuredCol);
-        await setDoc(personRef, {
-          ...row,
-          policyId: policyRef.id,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+      if (usesInsuredPeople) {
+        for (const row of rows) {
+          const personRef = doc(insuredCol);
+          await setDoc(personRef, {
+            ...row,
+            policyId: policyRef.id,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
       }
 
-      setInfo(`Guardado exitoso. Póliza ID: ${policyRef.id} con ${rows.length} asegurados.`);
+      setInfo(`Guardado exitoso. Póliza ID: ${policyRef.id}${usesInsuredPeople ? ` con ${rows.length} asegurados.` : "."}`);
       setRows([]);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
@@ -285,7 +312,7 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0 }}>Cargar asegurados (Vida Grupo)</h3>
+          <h3 style={{ margin: 0 }}>Cargar asegurados ({policyType.replace(/_/g, " ")})</h3>
           <button onClick={onClose} style={{ fontSize: 18 }}>×</button>
         </div>
 
@@ -293,7 +320,43 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
           Cliente: <strong>{clientName || clientUid}</strong>
         </p>
 
-        <label style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#333" }}>Número de póliza</span>
+            <input value={policyNumber} onChange={(e) => setPolicyNumber(e.target.value)} />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#333" }}>Aseguradora</span>
+            <input value={insurer} onChange={(e) => setInsurer(e.target.value)} />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#333" }}>Inicio de vigencia</span>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#333" }}>Fin de vigencia (opcional)</span>
+            <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
+          </label>
+        </div>
+
+        {policyType === "ARL" && (
+          <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 12, color: "#333" }}>Clase de riesgo ARL</span><input value={riskClass} onChange={(e) => setRiskClass(e.target.value)} placeholder="I, II, III, IV o V" /></label>
+        )}
+        {policyType === "AUTOS" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+            <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 12, color: "#333" }}>Placa</span><input value={plate} onChange={(e) => setPlate(e.target.value)} /></label>
+            <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 12, color: "#333" }}>Vehículo</span><input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Marca, línea y modelo" /></label>
+          </div>
+        )}
+        {policyType === "CUMPLIMIENTO" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+            <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 12, color: "#333" }}>Número de contrato</span><input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} /></label>
+            <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 12, color: "#333" }}>Contratante</span><input value={contractor} onChange={(e) => setContractor(e.target.value)} /></label>
+            <label style={{ display: "grid", gap: 6 }}><span style={{ fontSize: 12, color: "#333" }}>Valor asegurado</span><input type="number" min="0" value={insuredValue} onChange={(e) => setInsuredValue(e.target.value)} /></label>
+          </div>
+        )}
+
+        {usesInsuredPeople ? <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 12, color: "#333" }}>
             Archivo Excel (.xlsx, .xls) o CSV
           </span>
@@ -304,9 +367,9 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
             onChange={handleFile}
             style={{ padding: 10 }}
           />
-        </label>
+        </label> : null}
 
-        {rawJson.length > 0 && (
+        {usesInsuredPeople && rawJson.length > 0 && (
           <label style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: "#333" }}>
               Fila de encabezados:
@@ -334,11 +397,9 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
 
         {rows.length > 0 && (
           <>
-            <div style={{ overflowX: "auto", maxHeight: 320 }}>
+            <div className="tableWrap" style={{ maxHeight: 320 }} role="region" aria-label="Vista previa de asegurados" tabIndex={0}>
               <table
-                border="1"
-                cellPadding="6"
-                style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}
+                className="table tableCompact"
               >
                 <thead>
                   <tr>
@@ -370,13 +431,13 @@ export default function InsuredUploadModal({ clientUid, clientName, onClose }) {
                 </tbody>
               </table>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={handleSave} disabled={uploading}>
-                {uploading ? "Guardando..." : "Guardar en Firestore"}
-              </button>
-            </div>
           </>
         )}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={handleSave} disabled={uploading}>
+            {uploading ? "Guardando..." : "Guardar póliza"}
+          </button>
+        </div>
       </div>
     </div>
   );

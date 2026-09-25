@@ -154,18 +154,22 @@ export default function ClientFormModal({ isOpen, onClose, client, companyId, us
       if (!p?.tienePoliza) return;
       if (!(p.inicio || "").trim() || !(p.fin || "").trim()) {
         errors.push(`${label}: si tiene póliza debes ingresar Inicio y Fin`);
+      } else if (p.fin < p.inicio) {
+        errors.push(`${label}: la fecha de fin no puede ser anterior al inicio`);
       }
     };
 
     checkPolicy("vida", "Vida");
     checkPolicy("salud", "Salud");
     checkPolicy("generales", "Generales");
+    checkPolicy("arl", "ARL");
 
     return errors;
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (saving) return;
     setError("");
     const errors = validate();
     if (errors.length) {
@@ -189,6 +193,7 @@ export default function ClientFormModal({ isOpen, onClose, client, companyId, us
           if (snap.exists()) onSaved?.({ id: snap.id, ...snap.data() });
         } catch (e) {
           console.error(e);
+          onSaved?.({ ...client, ...draft, id: client.id });
         }
       } else {
         const createdRef = await addDoc(collection(db, "clients"), {
@@ -202,6 +207,7 @@ export default function ClientFormModal({ isOpen, onClose, client, companyId, us
           if (snap.exists()) onSaved?.({ id: snap.id, ...snap.data() });
         } catch (e) {
           console.error(e);
+          onSaved?.({ ...draft, id: createdRef.id });
         }
       }
       onClose();
@@ -220,7 +226,7 @@ export default function ClientFormModal({ isOpen, onClose, client, companyId, us
       <div className="modal" style={{ maxWidth: 600 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
           <h3 style={{ margin: 0 }}>{client ? "Editar Cliente" : "Nuevo Cliente"}</h3>
-          <button className="btn" onClick={onClose}>✕</button>
+          <button className="btn" disabled={saving} onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSave} style={{ display: "grid", gap: 16 }}>
@@ -353,14 +359,16 @@ export default function ClientFormModal({ isOpen, onClose, client, companyId, us
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button
                 type="button"
-                className="btn"
+                className="btn addButton"
+                aria-label="Agregar contacto"
+                title="Agregar contacto"
                 onClick={() => {
                   const next = structuredClone(draft);
                   next.basic.contacts = [...(next.basic.contacts || []), { name: "", role: "", email: "", phone: "" }];
                   setDraft(next);
                 }}
               >
-                + Agregar contacto
+                +
               </button>
             </div>
           </div>
@@ -513,11 +521,11 @@ export default function ClientFormModal({ isOpen, onClose, client, companyId, us
           </div>
 
           {error ? (
-            <div className="error">{error}</div>
+            <div role="alert" className="error">{error}</div>
           ) : null}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
-            <button type="button" className="btn" onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn" disabled={saving} onClick={onClose}>Cancelar</button>
             <button type="submit" className="btn btnPrimary" disabled={saving}>
               {saving ? "Guardando..." : "Guardar Cliente"}
             </button>

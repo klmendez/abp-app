@@ -312,9 +312,10 @@
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   width: 100%;
   box-sizing: border-box;
+  overflow-x: auto;
 
   padding: 10px 12px;
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -333,6 +334,7 @@
   display: grid;
   gap: 6px;
   min-width: 180px;
+  flex: 0 0 auto;
 }
 
 .afGrow {
@@ -383,6 +385,7 @@
   height: 40px;
   background: rgba(148, 163, 184, 0.35);
   align-self: flex-end;
+  flex: 0 0 1px;
 }
 
 /* Toggle */
@@ -467,22 +470,6 @@
 @media (max-width: 880px) {
   .activityBoard {
     padding-bottom: 8px;
-  }
-
-  .activityFiltersBar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .afItem,
-  .afGrow,
-  .afToggle,
-  .afDivider {
-    width: 100%;
-  }
-
-  .afDivider {
-    display: none;
   }
 
   .activityLane {

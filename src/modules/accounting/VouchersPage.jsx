@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -8,7 +7,6 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
-  updateDoc,
   where,
   writeBatch,
 } from "firebase/firestore";
@@ -52,7 +50,6 @@ export default function VouchersPage({ companyId, userId }) {
   const [accountSearch, setAccountSearch] = useState("");
 
   const [saving, setSaving] = useState(false);
-  const [loadingEdit, setLoadingEdit] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingStatus, setEditingStatus] = useState(null);
   const [draft, setDraft] = useState({
@@ -111,7 +108,8 @@ export default function VouchersPage({ companyId, userId }) {
     <title>${String(title || "Export")}</title>
     <style>
       :root { color-scheme: light; }
-      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans"; margin: 24px; color: #0f172a; }
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+      body { font-family: "Poppins", system-ui, sans-serif; font-weight: 400; margin: 24px; color: #0f172a; }
       h1 { font-size: 18px; margin: 0 0 12px; }
       .small { color: #475569; font-size: 12px; margin-top: 4px; }
       table { width: 100%; border-collapse: collapse; }
@@ -171,7 +169,6 @@ export default function VouchersPage({ companyId, userId }) {
   const startEdit = async (row) => {
     if (!row?.id) return;
     setError("");
-    setLoadingEdit(true);
     try {
       const linesSnap = await getDocs(collection(db, "vouchers", row.id, "lines"));
       const lines = linesSnap.docs
@@ -204,8 +201,6 @@ export default function VouchersPage({ companyId, userId }) {
     } catch (err) {
       console.error(err);
       setError(err?.message || "Error cargando comprobante");
-    } finally {
-      setLoadingEdit(false);
     }
   };
 
@@ -370,7 +365,7 @@ export default function VouchersPage({ companyId, userId }) {
         concept: draft.concept.trim(),
         thirdPartyName: (draft.thirdPartyName || "").trim(),
         driveLink: (draft.driveLink || "").trim(),
-        status: isEditing ? editingStatus || "POSTED" : "DRAFT",
+        status: isEditing ? editingStatus || "POSTED" : "POSTED",
         totals: {
           debit: totals.debit,
           credit: totals.credit,
@@ -399,8 +394,10 @@ export default function VouchersPage({ companyId, userId }) {
         }
       }
 
+      const batch = writeBatch(db);
       if (!voucherId) {
-        const voucherRef = await addDoc(collection(db, "vouchers"), {
+        const voucherRef = doc(collection(db, "vouchers"));
+        batch.set(voucherRef, {
           ...header,
           createdAt: serverTimestamp(),
           createdBy: userId || null,
@@ -410,7 +407,7 @@ export default function VouchersPage({ companyId, userId }) {
         voucherId = voucherRef.id;
       } else {
         try {
-          await updateDoc(doc(db, "vouchers", voucherId), header);
+          batch.update(doc(db, "vouchers", voucherId), header);
         } catch (err) {
           throw new Error(`Permisos al actualizar encabezado del comprobante. ${err?.message || ""}`.trim());
         }
@@ -418,7 +415,7 @@ export default function VouchersPage({ companyId, userId }) {
 
       if (isEditing) {
         try {
-          await addDoc(collection(db, "vouchers", voucherId, "edits"), {
+          batch.set(doc(collection(db, "vouchers", voucherId, "edits")), {
             companyId,
             voucherId,
             editedAt: serverTimestamp(),
@@ -446,17 +443,7 @@ export default function VouchersPage({ companyId, userId }) {
         }
       }
 
-      const batch = writeBatch(db);
-
-      let existingLineIds = [];
-      if (isEditing) {
-        try {
-          const existingLines = await getDocs(collection(db, "vouchers", voucherId, "lines"));
-          existingLineIds = existingLines.docs.map((d) => d.id);
-        } catch (err) {
-          throw new Error(`Permisos al leer líneas existentes. ${err?.message || ""}`.trim());
-        }
-      }
+      const existingLineIds = beforeLines.map((line) => line.id);
 
       const lines = draft.lines.map((l) => {
         const debit = Number(l.debit) || 0;
@@ -503,21 +490,7 @@ export default function VouchersPage({ companyId, userId }) {
       try {
         await batch.commit();
       } catch (err) {
-        throw new Error(`Permisos al guardar líneas del comprobante. ${err?.message || ""}`.trim());
-      }
-
-      if (!isEditing) {
-        try {
-          await updateDoc(doc(db, "vouchers", voucherId), {
-            status: "POSTED",
-            updatedAt: serverTimestamp(),
-            updatedBy: userId || null,
-            postedAt: serverTimestamp(),
-            postedBy: userId || null,
-          });
-        } catch (err) {
-          throw new Error(`Permisos al contabilizar (cambiar estado). ${err?.message || ""}`.trim());
-        }
+        throw new Error(`No se guardó el comprobante. Ningún cambio fue aplicado. ${err?.message || ""}`.trim());
       }
 
       setView("list");
@@ -611,8 +584,8 @@ export default function VouchersPage({ companyId, userId }) {
                   <span className="smallMuted">Buscar cuenta</span>
                   <input className="input" value={accountSearch} onChange={(e) => setAccountSearch(e.target.value)} />
                 </label>
-                <button type="button" className="btn" onClick={() => setDraft((d) => ({ ...d, lines: [...d.lines, emptyLine()] }))} disabled={saving}>
-                  + Agregar línea
+                <button type="button" className="btn addButton" onClick={() => setDraft((d) => ({ ...d, lines: [...d.lines, emptyLine()] }))} disabled={saving} aria-label="Agregar línea" title="Agregar línea">
+                  +
                 </button>
               </div>
 
@@ -749,8 +722,8 @@ export default function VouchersPage({ companyId, userId }) {
             >
               Exportar PDF
             </button>
-            <button type="button" className="btn btnPrimary" onClick={startNew}>
-              Nuevo comprobante
+            <button type="button" className="btn btnPrimary addButton" onClick={startNew} aria-label="Nuevo comprobante" title="Nuevo comprobante">
+              +
             </button>
           </div>
 

@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-17T17:45:54.603Z",
+  "results": [
+    {
+      "filter": "mes",
+      "status": 400,
+      "error": "FAILED_PRECONDITION",
+      "message": "The query requires an index. You can create it here: "
+    },
+    {
+      "filter": "anio",
+      "status": 400,
+      "error": "FAILED_PRECONDITION",
+      "message": "The query requires an index. You can create it here: "
+    },
+    {
+      "filter": "intermediario",
+      "status": 400,
+      "error": "FAILED_PRECONDITION",
+      "message": "The query requires an index. You can create it here: "
+    },
+    {
+      "filter": "ramo",
+      "status": 400,
+      "error": "FAILED_PRECONDITION",
+      "message": "The query requires an index. You can create it here: "
+    },
+    {
+      "filter": "estado",
+      "status": 400,
+      "error": "FAILED_PRECONDITION",
+      "message": "The query requires an index. You can create it here: "
+    },
+    {
+      "filter": "estadoValidacion",
+      "status": 400,
+      "error": "FAILED_PRECONDITION",
+      "message": "The query requires an index. You can create it here: "
+    }
+  ]
+}

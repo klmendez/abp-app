@@ -1,6 +1,5 @@
 import { 
   collection, 
-  addDoc, 
   getDocs, 
   query, 
   where, 
@@ -8,8 +7,6 @@ import {
   deleteDoc, 
   doc,
   writeBatch,
-  getDoc,
-  updateDoc,
   limit
 } from "firebase/firestore";
 import { db } from "../../firebase";

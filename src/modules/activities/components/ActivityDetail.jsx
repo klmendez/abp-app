@@ -5,7 +5,6 @@ export default function ActivityDetail({
   onEditActivity,
   responsibleText,
   assignerText,
-  clientLabel,
   fieldLabel,
   formatChangeValue,
   onOpenNoveltyModal,
@@ -23,7 +22,7 @@ export default function ActivityDetail({
       <div className="homeQuickCard" style={{ textAlign: "left", cursor: "default" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 16 }}>{activity.title || activity.activity}</div>
+            <div className="activityDetailTitle" style={{ fontSize: 16 }}>{activity.title || activity.activity}</div>
             <div className="smallMuted">ID: {activity.id}</div>
           </div>
 
@@ -82,8 +81,8 @@ export default function ActivityDetail({
         <div className="activityDetailSection">
           <div className="sectionTitle" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <span>Novedades</span>
-            <button type="button" className="btn btnPrimary" onClick={onOpenNoveltyModal}>
-              Agregar novedad
+            <button type="button" className="btn btnPrimary addButton" onClick={onOpenNoveltyModal} aria-label="Agregar novedad" title="Agregar novedad">
+              +
             </button>
           </div>
 

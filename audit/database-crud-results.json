@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-17T17:42:10.014Z",
+  "auditId": "audit-7ccf159c-fc45-4488-b568-00ca1dba6c6c",
+  "authorization": "Existing administrative IAM session; does not validate client Security Rules",
+  "results": [
+    {
+      "collection": "clients",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    },
+    {
+      "collection": "activities",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    },
+    {
+      "collection": "chartOfAccounts",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    },
+    {
+      "collection": "vouchers",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    },
+    {
+      "collection": "companies/abp/commissions",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    },
+    {
+      "collection": "clientPolicies",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    },
+    {
+      "collection": "clientPolicies/audit-7ccf159c-fc45-4488-b568-00ca1dba6c6c/insuredPeople",
+      "create": 200,
+      "read": 200,
+      "update": 200,
+      "verified": true
+    }
+  ],
+  "cleanup": {
+    "checked": 7,
+    "remaining": 0
+  }
+}

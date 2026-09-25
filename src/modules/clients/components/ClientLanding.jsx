@@ -11,9 +11,10 @@ export default function ClientLanding({
   onNewActivity,
   onEditActivity,
   companyId,
-  userId,
 }) {
   const [activities, setActivities] = useState([]);
+  const [loadError, setLoadError] = useState("");
+  const [retry, setRetry] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [responsibleUser, setResponsibleUser] = useState(null);
@@ -33,15 +34,18 @@ export default function ClientLanding({
     const unsub = onSnapshot(q, (snap) => {
       setActivities(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setLoading(false);
+      setLoadError("");
+    }, () => {
+      setLoading(false);
+      setLoadError("No se pudieron cargar las actividades de este cliente.");
     });
     return () => unsub();
-  }, [companyId, client.id]);
+  }, [companyId, client.id, retry]);
 
   useEffect(() => {
     let cancelled = false;
     const uid = (client.commercial?.responsibleUid || "").trim();
     if (!uid) {
-      setResponsibleUser(null);
       return () => {
         cancelled = true;
       };
@@ -65,6 +69,7 @@ export default function ClientLanding({
   const responsibleLabel = () => {
     const uid = (client.commercial?.responsibleUid || "").trim();
     if (!uid) return "-";
+    if (responsibleUser?.id !== uid) return uid;
     const name = (responsibleUser?.displayName || responsibleUser?.name || "").trim();
     const email = (responsibleUser?.email || "").trim();
     if (name && email) return `${name} (${email})`;
@@ -84,8 +89,8 @@ export default function ClientLanding({
         </button>
         <div className="clientLandingTitle">{clientName}</div>
         <div className="clientLandingToolbarActions">
-          <button type="button" className="btn" onClick={() => onNewActivity?.()}>
-            Nueva actividad
+          <button type="button" className="btn addButton" onClick={() => onNewActivity?.()} aria-label="Nueva actividad" title="Nueva actividad">
+            +
           </button>
           <button type="button" className="btn btnPrimary" onClick={() => onEditClient?.()}>
             Editar cliente
@@ -216,7 +221,9 @@ export default function ClientLanding({
 
       <div className="clientLandingCard">
         <div className="sectionTitle">Tablero de Actividades</div>
-        {loading ? (
+        {loadError ? (
+          <div role="alert" className="inlineError">{loadError}<button type="button" className="btn" onClick={() => { setLoadError(""); setLoading(true); setRetry((value) => value + 1); }}>Reintentar</button></div>
+        ) : loading ? (
           <div className="smallMuted">Cargando actividades...</div>
         ) : (
           <div className="clientActivitiesBoard">

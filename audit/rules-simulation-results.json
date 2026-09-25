@@ -1,0 +1,1181 @@
+{
+  "date": "2026-09-17T17:45:29.205Z",
+  "method": "Firebase Rules projects.test; all document lookups mocked",
+  "tests": [
+    {
+      "label": "Admin reads clients",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 111,
+            "column": 29,
+            "currentOffset": 2396,
+            "endOffset": 2402
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Admin creates root activity",
+      "expectation": "ALLOW",
+      "state": "FAILURE"
+    },
+    {
+      "label": "Admin reads root activity",
+      "expectation": "ALLOW",
+      "state": "FAILURE"
+    },
+    {
+      "label": "Admin writes voucher edit history",
+      "expectation": "ALLOW",
+      "state": "FAILURE"
+    },
+    {
+      "label": "Admin writes voucher lines",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 94,
+            "column": 31,
+            "currentOffset": 2136,
+            "endOffset": 2142
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Admin writes commissions",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 510,
+            "column": 31,
+            "currentOffset": 10987,
+            "endOffset": 10993
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Staff reads clients",
+      "expectation": "ALLOW",
+      "state": "FAILURE",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-staff"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-staff"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-staff"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-staff"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 111,
+            "column": 29,
+            "currentOffset": 2396,
+            "endOffset": 2402
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client reads own policy",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 124,
+            "column": 27,
+            "currentOffset": 2579,
+            "endOffset": 2585
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client denied other policy",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 124,
+            "column": 27,
+            "currentOffset": 2579,
+            "endOffset": 2585
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client reads own insured",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 143,
+            "column": 24,
+            "currentOffset": 2981,
+            "endOffset": 2987
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client denied other insured",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/other"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/other"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 143,
+            "column": 24,
+            "currentOffset": 2981,
+            "endOffset": 2987
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client creates insured",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 149,
+            "column": 26,
+            "currentOffset": 3099,
+            "endOffset": 3105
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client edits name",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 213,
+            "column": 26,
+            "currentOffset": 4573,
+            "endOffset": 4579
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client edits start date offered by UI",
+      "expectation": "ALLOW",
+      "state": "FAILURE",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 213,
+            "column": 26,
+            "currentOffset": 4573,
+            "endOffset": 4579
+          },
+          "value": false
+        },
+        {
+          "sourcePosition": {
+            "line": 346,
+            "column": 26,
+            "currentOffset": 7852,
+            "endOffset": 7861
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client withdraws insured",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 213,
+            "column": 26,
+            "currentOffset": 4573,
+            "endOffset": 4579
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client restores status only",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 213,
+            "column": 26,
+            "currentOffset": 4573,
+            "endOffset": 4579
+          },
+          "value": false
+        },
+        {
+          "sourcePosition": {
+            "line": 346,
+            "column": 26,
+            "currentOffset": 7852,
+            "endOffset": 7861
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client fully restores original novelty",
+      "expectation": "ALLOW",
+      "state": "FAILURE",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 213,
+            "column": 26,
+            "currentOffset": 4573,
+            "endOffset": 4579
+          },
+          "value": false
+        },
+        {
+          "sourcePosition": {
+            "line": 346,
+            "column": 26,
+            "currentOffset": 7852,
+            "endOffset": 7861
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client undoes new inclusion",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 379,
+            "column": 26,
+            "currentOffset": 8614,
+            "endOffset": 8620
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client confirms month",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 401,
+            "column": 24,
+            "currentOffset": 9019,
+            "endOffset": 9028
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client denied self promotion",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 69,
+            "column": 24,
+            "currentOffset": 1648,
+            "endOffset": 1654
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Anonymous denied clients",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 111,
+            "column": 29,
+            "currentOffset": 2396,
+            "endOffset": 2402
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Admin creates another user profile",
+      "expectation": "ALLOW",
+      "state": "FAILURE",
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 62,
+            "column": 24,
+            "currentOffset": 1465,
+            "endOffset": 1474
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Admin creates company membership",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-admin"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 466,
+            "column": 42,
+            "currentOffset": 10237,
+            "endOffset": 10243
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client denied membership promotion",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 466,
+            "column": 42,
+            "currentOffset": 10237,
+            "endOffset": 10243
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client denied accounting",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 91,
+            "column": 29,
+            "currentOffset": 2064,
+            "endOffset": 2070
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client denied modifying policy ownership",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 135,
+            "column": 40,
+            "currentOffset": 2856,
+            "endOffset": 2862
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client denied negative monthly premium",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/users/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/companies/abp/memberships/simulated-client"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 213,
+            "column": 26,
+            "currentOffset": 4573,
+            "endOffset": 4579
+          },
+          "value": false
+        },
+        {
+          "sourcePosition": {
+            "line": 346,
+            "column": 26,
+            "currentOffset": 7852,
+            "endOffset": 7861
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Client creates change notification",
+      "expectation": "ALLOW",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/own"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 401,
+            "column": 24,
+            "currentOffset": 9019,
+            "endOffset": 9028
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "label": "Client denied notification for other policy",
+      "expectation": "DENY",
+      "state": "SUCCESS",
+      "functionCalls": [
+        {
+          "function": "exists",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/other"
+          ]
+        },
+        {
+          "function": "get",
+          "args": [
+            "/databases/%28default%29/documents/clientPolicies/other"
+          ]
+        }
+      ],
+      "visitedExpressions": [
+        {
+          "sourcePosition": {
+            "line": 401,
+            "column": 24,
+            "currentOffset": 9019,
+            "endOffset": 9028
+          },
+          "value": false
+        }
+      ]
+    }
+  ]
+}

@@ -12,9 +12,9 @@ export default function ClientsPage({
   initialClientMode,
   onInitialClientConsumed,
 }) {
-  const [selectedClientForLanding, setSelectedClientForLanding] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
+  const [selectedClientForLanding, setSelectedClientForLanding] = useState(initialClient || null);
+  const [isModalOpen, setIsModalOpen] = useState(initialClientMode === "edit" && !!initialClient?.id);
+  const [editingClient, setEditingClient] = useState(initialClientMode === "edit" ? initialClient : null);
 
   const handleSelect = (client) => setSelectedClientForLanding(client);
 
@@ -30,13 +30,8 @@ export default function ClientsPage({
 
   useEffect(() => {
     if (!initialClient?.id) return;
-    setSelectedClientForLanding(initialClient);
-    if (initialClientMode === "edit") {
-      setEditingClient(initialClient);
-      setIsModalOpen(true);
-    }
     onInitialClientConsumed?.();
-  }, [initialClient?.id]);
+  }, [initialClient, onInitialClientConsumed]);
 
   // Cuando entra a un cliente, dejamos que ClientLanding controle su layout interno
   if (selectedClientForLanding) {
@@ -73,9 +68,10 @@ export default function ClientsPage({
 
   return (
     <div className="pageContent">
-      <div className="pageActions">
-        <button type="button" className="btn btnPrimary" onClick={handleCreate}>
-          Nuevo cliente
+      <div className="clientsPageHeader">
+        <p className="pageIntro">Consulta tus clientes, sus contactos y el seguimiento comercial.</p>
+        <button type="button" className="btn btnPrimary addButton" onClick={handleCreate} aria-label="Nuevo cliente" title="Nuevo cliente">
+          +
         </button>
       </div>
 

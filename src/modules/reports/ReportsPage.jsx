@@ -48,14 +48,15 @@ export default function ReportsPage({ companyId }) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [tab, setTab] = useState("BALANCE");
+  const [openedAt] = useState(() => Date.now());
 
   const reportPrintRef = useRef(null);
 
   const reportDateLabel = useMemo(() => {
     if (to) return formatLongDate(`${to}T00:00:00`);
     if (from) return formatLongDate(`${from}T00:00:00`);
-    return formatLongDate(Date.now());
-  }, [from, to]);
+    return formatLongDate(openedAt);
+  }, [from, to, openedAt]);
 
   const openPrintWindow = ({ title, html }) => {
     const w = window.open("", "_blank", "noopener,noreferrer");
@@ -69,7 +70,8 @@ export default function ReportsPage({ companyId }) {
     <title>${String(title || "Informe")}</title>
     <style>
       :root { color-scheme: light; }
-      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans"; margin: 24px; color: #0f172a; }
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+      body { font-family: "Poppins", system-ui, sans-serif; font-weight: 400; margin: 24px; color: #0f172a; }
       h1 { font-size: 18px; margin: 0 0 8px; }
       .small { color: #475569; font-size: 12px; margin: 0 0 12px; }
       table { width: 100%; border-collapse: collapse; }
@@ -363,7 +365,7 @@ export default function ReportsPage({ companyId }) {
         <div className="reportsGrid" style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>
           {/* Filtro */}
           <div className="filterSection" style={{ gridColumn: "span 12", textAlign: "left", cursor: "default" }}>
-            <div style={{ fontWeight: 800, marginBottom: 10 }}>Filtro de periodo</div>
+            <div className="sectionTitle" style={{ marginBottom: 4 }}>Filtro de periodo</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end" }}>
               <label style={{ display: "grid", gap: 6 }}>
                 <span className="smallMuted">Desde</span>

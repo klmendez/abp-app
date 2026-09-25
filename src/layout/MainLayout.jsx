@@ -2,16 +2,30 @@ import { useEffect, useState } from "react";
 import Sidebar from "../layout/Sidebar";
 import Topbar from "../layout/Topbar";
 
-export default function MainLayout({ user, me, membership, activeSection, onChangeSection, onGoHome, children, onSignOut, canManageUsers }) {
+export default function MainLayout({ user, activeSection, onChangeSection, children, onSignOut, canManageUsers }) {
   const [isNavOpen, setIsNavOpen] = useState(false);
 
   useEffect(() => {
     const closeIfDesktop = () => {
-      if (window.innerWidth >= 1024) setIsNavOpen(false);
+      if (window.innerWidth > 1024) setIsNavOpen(false);
     };
     window.addEventListener("resize", closeIfDesktop);
     return () => window.removeEventListener("resize", closeIfDesktop);
   }, []);
+
+  useEffect(() => {
+    if (!isNavOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setIsNavOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isNavOpen]);
 
   return (
     <div className="app-layout">
@@ -30,6 +44,7 @@ export default function MainLayout({ user, me, membership, activeSection, onChan
           user={user}
           onSignOut={onSignOut}
           activeSection={activeSection}
+          isNavOpen={isNavOpen}
           onToggleNav={() => setIsNavOpen((v) => !v)}
         />
         <main className="page">

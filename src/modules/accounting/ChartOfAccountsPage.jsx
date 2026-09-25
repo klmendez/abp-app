@@ -102,18 +102,6 @@ function chunkArray(arr, size) {
   return out;
 }
 
-function formatMaybeTimestamp(value) {
-  try {
-    if (!value) return "";
-    if (typeof value?.toDate === "function") return value.toDate().toLocaleString();
-    const d = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString();
-  } catch {
-    return "";
-  }
-}
-
 export default function ChartOfAccountsPage({ companyId, userId }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

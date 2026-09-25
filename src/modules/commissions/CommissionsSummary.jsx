@@ -1,4 +1,4 @@
-import { formatCurrency, formatPercentage } from "./commissionsUtils";
+import { formatCurrency } from "./commissionsUtils";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
@@ -6,7 +6,7 @@ import {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658", "#ff7c43", "#665191", "#a05195"];
 
-export default function CommissionsSummary({ metrics, onFilterChange }) {
+export default function CommissionsSummary({ metrics }) {
   if (!metrics) return null;
 
   // Preparar datos para gráficas

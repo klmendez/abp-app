@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../../../firebase";
 
 export default function ClientsTable({ companyId, onSelect }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("TODOS");
   const [commercialFilter, setCommercialFilter] = useState("TODOS");
@@ -23,19 +25,17 @@ export default function ClientsTable({ companyId, onSelect }) {
   };
 
   useEffect(() => {
-    const loadClients = async () => {
-      try {
-        const q = query(collection(db, "clients"), where("companyId", "==", companyId));
-        const snap = await getDocs(q);
-        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch (err) {
-        console.error("Error loading clients:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadClients();
-  }, [companyId]);
+    if (!companyId) return;
+    const q = query(collection(db, "clients"), where("companyId", "==", companyId));
+    return onSnapshot(q, (snap) => {
+      setRows(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
+      setError("");
+      setLoading(false);
+    }, () => {
+      setError("No se pudieron cargar los clientes. Verifica tu conexión y tus permisos.");
+      setLoading(false);
+    });
+  }, [companyId, retry]);
 
   const statusOptions = useMemo(() => {
     const values = new Set(
@@ -71,14 +71,14 @@ export default function ClientsTable({ companyId, onSelect }) {
     const s = (search || "").toLowerCase().trim();
     const next = rows
       .filter((r) => {
-        const name = (r.basic?.name || r.name || "").toLowerCase();
-        const nit = (r.basic?.nit || r.nit || "").toLowerCase();
-        const city = (r.basic?.city || r.city || "").toLowerCase();
+        const name = String(r.basic?.name || r.name || "").toLowerCase();
+        const nit = String(r.basic?.nit || r.nit || "").toLowerCase();
+        const city = String(r.basic?.city || r.city || "").toLowerCase();
         const matchesSearch = !s || name.includes(s) || nit.includes(s) || city.includes(s);
-        const matchesStatus = statusFilter === "TODOS" || String(r.status || "").toUpperCase() === statusFilter;
+        const matchesStatus = statusFilter === "TODOS" || String(r.status || "").trim().toUpperCase() === statusFilter;
         const matchesCommercial =
-          commercialFilter === "TODOS" || String(r.commercial?.commercialStatus || "").toUpperCase() === commercialFilter;
-        const matchesCity = cityFilter === "TODAS" || String(r.basic?.city || r.city || "").toUpperCase() === cityFilter;
+          commercialFilter === "TODOS" || String(r.commercial?.commercialStatus || "").trim().toUpperCase() === commercialFilter;
+        const matchesCity = cityFilter === "TODAS" || String(r.basic?.city || r.city || "").trim().toUpperCase() === cityFilter;
         return matchesSearch && matchesStatus && matchesCommercial && matchesCity;
       })
       .slice();
@@ -126,7 +126,9 @@ export default function ClientsTable({ companyId, onSelect }) {
     return `Mostrando ${filtered} de ${total} clientes`;
   }, [rows.length, processedRows.length, loading]);
 
-  if (loading) return <div className="smallMuted">Cargando clientes...</div>;
+  if (!companyId) return <div role="alert" className="inlineError">Selecciona una empresa para consultar sus clientes.</div>;
+  if (error) return <div role="alert" className="inlineError">{error}<button type="button" className="btn" onClick={() => { setError(""); setLoading(true); setRetry((value) => value + 1); }}>Reintentar</button></div>;
+  if (loading) return <div role="status" className="smallMuted">Cargando clientes...</div>;
 
   return (
     <div className="tableShell">
@@ -138,6 +140,7 @@ export default function ClientsTable({ companyId, onSelect }) {
           <input
             className="input inputDense"
             value={search}
+            aria-label="Buscar clientes"
             placeholder="Nombre, NIT o ciudad..."
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -145,7 +148,7 @@ export default function ClientsTable({ companyId, onSelect }) {
 
         <div className="filterGroup">
           <span className="filterLabel">Ciudad</span>
-          <select className="select selectDense" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)}>
+          <select aria-label="Ciudad" className="select selectDense" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)}>
             {cityOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -158,6 +161,7 @@ export default function ClientsTable({ companyId, onSelect }) {
           <span className="filterLabel">Estado comercial</span>
           <select
             className="select selectDense"
+            aria-label="Estado comercial"
             value={commercialFilter}
             onChange={(e) => setCommercialFilter(e.target.value)}
           >
@@ -171,7 +175,7 @@ export default function ClientsTable({ companyId, onSelect }) {
 
         <div className="filterGroup">
           <span className="filterLabel">Estado</span>
-          <select className="select selectDense" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select aria-label="Estado" className="select selectDense" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             {statusOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -249,17 +253,17 @@ export default function ClientsTable({ companyId, onSelect }) {
                   onClick={() => onSelect?.(r)}
                   style={{ cursor: onSelect ? "pointer" : "default" }}
                 >
-                  <td style={{ fontWeight: 600 }}>{r.basic?.name || r.name || "-"}</td>
-                  <td>{r.basic?.nit || r.nit || "-"}</td>
-                  <td>{r.basic?.city || r.city || "-"}</td>
-                  <td>{contactValue(r, "email") || "-"}</td>
-                  <td>{contactValue(r, "phone") || "-"}</td>
-                  <td>
+                  <td data-label="Nombre"><button type="button" className="clientNameButton" onClick={(event) => { event.stopPropagation(); onSelect?.(r); }}>{r.basic?.name || r.name || "-"}</button></td>
+                  <td data-label="NIT">{r.basic?.nit || r.nit || "-"}</td>
+                  <td data-label="Ciudad">{r.basic?.city || r.city || "-"}</td>
+                  <td data-label="Email">{contactValue(r, "email") || "-"}</td>
+                  <td data-label="Teléfono">{contactValue(r, "phone") || "-"}</td>
+                  <td data-label="Estado comercial">
                     <span className={`statusBadge status-${r.commercial?.commercialStatus}`}>
                       {r.commercial?.commercialStatus || "-"}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Estado">
                     <span className={`statusBadge status-${r.status}`}>{r.status || "-"}</span>
                   </td>
                 </tr>

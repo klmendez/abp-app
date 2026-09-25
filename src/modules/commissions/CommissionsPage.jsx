@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { 
   validateColumns, 
@@ -41,16 +41,7 @@ export default function CommissionsPage({ companyId, userId }) {
   
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    if (activeTab === "datos" || activeTab === "resumen" || activeTab === "informes") {
-      loadData();
-    }
-    if (activeTab === "archivos") {
-      loadUploadedFiles();
-    }
-  }, [activeTab, companyId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getAllCommissionRecords(companyId);
@@ -60,9 +51,9 @@ export default function CommissionsPage({ companyId, userId }) {
       console.error("Error cargando datos:", error);
     }
     setLoading(false);
-  };
+  }, [companyId]);
 
-  const loadUploadedFiles = async () => {
+  const loadUploadedFiles = useCallback(async () => {
     setLoading(true);
     try {
       const files = await getUploadedFiles(companyId);
@@ -71,7 +62,16 @@ export default function CommissionsPage({ companyId, userId }) {
       console.error("Error cargando archivos:", error);
     }
     setLoading(false);
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    if (activeTab === "datos" || activeTab === "resumen" || activeTab === "informes") {
+      void Promise.resolve().then(loadData);
+    }
+    if (activeTab === "archivos") {
+      void Promise.resolve().then(loadUploadedFiles);
+    }
+  }, [activeTab, loadData, loadUploadedFiles]);
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -499,7 +499,7 @@ export default function CommissionsPage({ companyId, userId }) {
               {processedData.valid.length > 0 && (
                 <div className="preview-section">
                   <h3>Vista previa (primeros 10 registros)</h3>
-                  <div className="preview-table-wrapper">
+                  <div className="preview-table-wrapper" role="region" aria-label="Vista previa de comisiones" tabIndex={0}>
                     <table className="preview-table">
                       <thead>
                         <tr>
@@ -692,7 +692,7 @@ export default function CommissionsPage({ companyId, userId }) {
                   <p>No hay registros que coincidan con los filtros.</p>
                 </div>
               ) : (
-                <div className="data-table-wrapper">
+                <div className="data-table-wrapper" role="region" aria-label="Tabla de comisiones" tabIndex={0}>
                   <table className="data-table">
                     <thead>
                       <tr>
@@ -757,7 +757,7 @@ export default function CommissionsPage({ companyId, userId }) {
               <p>No hay archivos cargados.</p>
             </div>
           ) : (
-            <div className="files-list">
+            <div className="files-list" role="region" aria-label="Tabla de archivos cargados" tabIndex={0}>
               <h2>Archivos cargados ({uploadedFiles.length})</h2>
               <table className="files-table">
                 <thead>

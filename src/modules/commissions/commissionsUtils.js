@@ -178,7 +178,7 @@ export function parseDate(value) {
   const str = String(value).trim();
   
   // Formato DD/MM/YYYY o DD-MM-YYYY
-  const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  const dmyMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (dmyMatch) {
     const [, day, month, year] = dmyMatch;
     const fullYear = year.length === 2 ? (parseInt(year) > 50 ? "19" + year : "20" + year) : year;
@@ -186,7 +186,7 @@ export function parseDate(value) {
   }
   
   // Formato YYYY-MM-DD
-  const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  const ymdMatch = str.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
   if (ymdMatch) {
     const [, year, month, day] = ymdMatch;
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;

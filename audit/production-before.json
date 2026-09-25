@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-17T17:58:00.174Z",
+  "rules": {
+    "name": "projects/abp-agencia-de-seguros/releases/cloud.firestore",
+    "rulesetName": "projects/abp-agencia-de-seguros/rulesets/3da3b034-a93d-41e1-a501-36739fbfd64f",
+    "createTime": "2026-02-15T18:53:46.426656Z",
+    "updateTime": "2026-07-29T15:43:08.555303Z"
+  },
+  "hosting": {
+    "releases": [
+      {
+        "name": "sites/abp-agencia-de-seguros/releases/1782492257864000",
+        "version": {
+          "name": "sites/abp-agencia-de-seguros/versions/e91857fb1dbd8db3",
+          "status": "FINALIZED",
+          "config": {
+            "rewrites": [
+              {
+                "glob": "**",
+                "path": "/index.html"
+              }
+            ]
+          },
+          "labels": {
+            "deployment-tool": "cli-firebase--action-hosting-deploy"
+          },
+          "createTime": "2026-06-26T16:44:13.891047Z",
+          "createUser": {
+            "email": "github-action-1165350155@abp-agencia-de-seguros.iam.gserviceaccount.com",
+            "imageUrl": "https://lh3.googleusercontent.com/a-/ALV-UjWncCl1zgrM-0yJAvizuqkKsSiQoIFBFRqGUfh3bXep2LlJMJs"
+          },
+          "finalizeTime": "2026-06-26T16:44:16.543457Z",
+          "finalizeUser": {
+            "email": "github-action-1165350155@abp-agencia-de-seguros.iam.gserviceaccount.com",
+            "imageUrl": "https://lh3.googleusercontent.com/a-/ALV-UjWncCl1zgrM-0yJAvizuqkKsSiQoIFBFRqGUfh3bXep2LlJMJs"
+          },
+          "fileCount": "7",
+          "versionBytes": "581358"
+        },
+        "type": "DEPLOY",
+        "releaseTime": "2026-06-26T16:44:17.864Z",
+        "releaseUser": {
+          "email": "github-action-1165350155@abp-agencia-de-seguros.iam.gserviceaccount.com",
+          "imageUrl": "https://lh3.googleusercontent.com/a-/ALV-UjWncCl1zgrM-0yJAvizuqkKsSiQoIFBFRqGUfh3bXep2LlJMJs"
+        }
+      }
+    ],
+    "nextPageToken": "ChZhYnAtYWdlbmNpYS1kZS1zZWd1cm9zEMCS4Y6tpZUD"
+  }
+}

@@ -2,8 +2,8 @@ export default function ActivityHeader({ view, selectedActivity, onCreate, onBac
   return (
     <div className="pageActions">
       {view === "board" ? (
-        <button type="button" className="btn btnPrimary" onClick={onCreate}>
-          Nueva actividad
+        <button type="button" className="btn btnPrimary addButton" onClick={onCreate} aria-label="Nueva actividad" title="Nueva actividad">
+          +
         </button>
       ) : (
         <button type="button" className="btn" onClick={onBackToBoard}>

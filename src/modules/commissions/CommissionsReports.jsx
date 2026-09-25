@@ -36,11 +36,6 @@ export default function CommissionsReports({ records }) {
     return Array.from(set).sort().reverse();
   }, [normalizedRecords]);
 
-  const meses = useMemo(() => {
-    const set = new Set(normalizedRecords.map(r => r.mesNombre).filter(Boolean));
-    return MESES_ORDEN.filter(m => set.has(m));
-  }, [normalizedRecords]);
-
   const ramos = useMemo(() => {
     const set = new Set(normalizedRecords.map(r => r.ramo).filter(Boolean));
     return Array.from(set).sort();
@@ -212,7 +207,7 @@ export default function CommissionsReports({ records }) {
 
       {/* Tabla resumen */}
       {selectedCliente && (
-        <div className="reports-table-section">
+        <div className="reports-table-section" role="region" aria-label="Tabla del informe de comisiones" tabIndex={0}>
           <table className="reports-table">
             <thead>
               <tr>

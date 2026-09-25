@@ -394,8 +394,9 @@
 /* Filters */
 .filters-section {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12px;
+  overflow-x: auto;
   margin-bottom: 16px;
   padding: 16px;
   background: #fafafa;
@@ -406,6 +407,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 0 0 auto;
 }
 
 .filter-group label {
@@ -694,8 +696,9 @@
 
 .filter-buttons {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
 }
 
 .filter-btn {

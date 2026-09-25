@@ -36,17 +36,6 @@ service cloud.firestore {
       );
     }
 
-    // Internal advisers may operate ABP clients and activities, not accounting
-    // or access management. Portal users with role USUARIO are excluded.
-    function isAdviser() {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("status", "ACTIVE") == "ACTIVE" &&
-        exists(/databases/$(database)/documents/companies/abp/memberships/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/companies/abp/memberships/$(request.auth.uid)).data.get("status", "ACTIVE") == "ACTIVE" &&
-        get(/databases/$(database)/documents/companies/abp/memberships/$(request.auth.uid)).data.get("role", "") == "ASESOR";
-    }
-
     function ownsPolicy(policyId) {
       return isSignedIn() &&
         exists(
@@ -65,17 +54,17 @@ service cloud.firestore {
       allow get: if isSignedIn() &&
         (
           request.auth.uid == userId ||
-          isAdmin() || isAdviser()
+          isAdmin()
         );
 
-      allow list: if isAdmin() || isAdviser();
+      allow list: if isAdmin();
 
-      allow create: if isAdmin() || (isSignedIn() &&
+      allow create: if isSignedIn() &&
         request.auth.uid == userId &&
         request.resource.data.get(
           "isPlatformSuperAdmin",
           false
-        ) == false);
+        ) == false;
 
       allow update: if isAdmin() || (
         isSignedIn() &&
@@ -101,10 +90,6 @@ service cloud.firestore {
     match /vouchers/{voucherId} {
       allow read, write: if isAdmin();
 
-      match /edits/{editId} {
-        allow read, create: if isAdmin();
-      }
-
       match /lines/{lineId} {
         allow read, write: if isAdmin();
       }
@@ -123,21 +108,7 @@ service cloud.firestore {
      */
 
     match /clients/{clientId} {
-      allow read, delete: if isAdmin() ||
-        (isAdviser() && resource.data.companyId == "abp");
-      allow create: if isAdmin() ||
-        (isAdviser() && request.resource.data.companyId == "abp");
-      allow update: if isAdmin() || (isAdviser() &&
-        resource.data.companyId == "abp" && request.resource.data.companyId == "abp");
-    }
-
-    match /activities/{activityId} {
-      allow read, delete: if isAdmin() ||
-        (isAdviser() && resource.data.companyId == "abp");
-      allow create: if isAdmin() ||
-        (isAdviser() && request.resource.data.companyId == "abp");
-      allow update: if isAdmin() || (isAdviser() &&
-        resource.data.companyId == "abp" && request.resource.data.companyId == "abp");
+      allow read, write: if isAdmin();
     }
 
     /*
@@ -363,27 +334,40 @@ service cloud.firestore {
         /*
          * DESHACER UN RETIRO
          *
-         * Reactiva y restaura exclusivamente la novedad guardada antes
-         * del retiro. No permite alterar identidad ni prima mensual.
+         * Únicamente permite:
+         * - Volver a estado ACTIVO.
+         * - Borrar la fecha de desvinculación.
+         * - Actualizar updatedAt.
+         *
+         * No permite cambiar nombre, cédula, valor
+         * mensual ni otra información.
          */
 
         allow update: if ownsPolicy(policyId) &&
-          resource.data.get("estado", "") == "DESVINCULADO" &&
-          request.resource.data.get("estado", "") == "ACTIVO" &&
-          request.resource.data.get("fechaDesvinculacion", null) == null &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            "estado", "fechaDesvinculacion", "updatedAt",
-            "tipoNovedad", "valorNovedad", "diasNovedad"
-          ]) && (
-            // Compatibility with already-open clients using the old restore.
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              "estado", "fechaDesvinculacion", "updatedAt"
-            ]) || (
-              request.resource.data.get("tipoNovedad", null) == resource.data.get("tipoNovedadAnterior", null) &&
-              request.resource.data.get("valorNovedad", null) == resource.data.get("valorNovedadAnterior", null) &&
-              request.resource.data.get("diasNovedad", null) == resource.data.get("diasNovedadAnterior", null)
-            )
-          );
+
+          resource.data.get(
+            "estado",
+            ""
+          ) == "DESVINCULADO" &&
+
+          request.resource.data.get(
+            "estado",
+            ""
+          ) == "ACTIVO" &&
+
+          request.resource.data.get(
+            "fechaDesvinculacion",
+            null
+          ) == null &&
+
+          request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasOnly([
+              "estado",
+              "fechaDesvinculacion",
+              "updatedAt"
+            ]);
 
         /*
          * DESHACER UNA VINCULACIÓN
@@ -477,7 +461,7 @@ service cloud.firestore {
             isAdmin()
           );
 
-        allow list: if isAdmin() || (companyId == "abp" && isAdviser());
+        allow list: if isAdmin();
 
         allow create, update, delete: if isAdmin();
       }
