@@ -13,7 +13,7 @@ import {
   where,
 } from "firebase/firestore";
 import { sendPasswordResetEmail } from "firebase/auth";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { auth, db } from "./firebase";
 import InsuredUploadModal from "./modules/policies/components/InsuredUploadModal";
 
@@ -146,6 +146,54 @@ function orderedPeople(people) {
   return [...(people || [])].sort((a, b) => {
     const statusOrder = Number(a.estado === "DESVINCULADO") - Number(b.estado === "DESVINCULADO");
     if (statusOrder) return statusOrder;
+    return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es");
+  });
+}
+
+function parseExcelDate(value) {
+  const formatted = formatExcelDate(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(formatted)) return null;
+  const [year, month, day] = formatted.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getNoveltyType(person) {
+  return person.tipoNovedad || person.tipoNovedadAnterior || (person.estado === "DESVINCULADO" ? "RETIRO" : "");
+}
+
+function getNoveltyDate(person) {
+  const noveltyType = getNoveltyType(person);
+  if (noveltyType === "RETIRO") return parseExcelDate(person.fechaDesvinculacion);
+  if (noveltyType === "INGRESO") return parseExcelDate(person.fechaVinculacion);
+  return null;
+}
+
+function dateInRange(date, start, end) {
+  return !!date && date >= start && date < end;
+}
+
+function isCurrentPeriodNovelty(person) {
+  return dateInRange(getNoveltyDate(person), CURRENT_PERIOD.start, CURRENT_PERIOD.end);
+}
+
+function isPreviousPeriodNovelty(person) {
+  const previousStart = new Date(CURRENT_PERIOD.start.getFullYear(), CURRENT_PERIOD.start.getMonth() - 1, 1);
+  return dateInRange(getNoveltyDate(person), previousStart, CURRENT_PERIOD.start);
+}
+
+function excelNoveltyGroup(person) {
+  if (isPreviousPeriodNovelty(person)) return 1;
+  if (isCurrentPeriodNovelty(person)) return 2;
+  if (person.estado === "DESVINCULADO") return 4;
+  if (getNoveltyType(person)) return 3;
+  return 0;
+}
+
+function orderedPeopleForExcel(people) {
+  return [...(people || [])].sort((a, b) => {
+    const groupOrder = excelNoveltyGroup(a) - excelNoveltyGroup(b);
+    if (groupOrder) return groupOrder;
     return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es");
   });
 }
@@ -466,26 +514,31 @@ export default function UsersAdmin({ companyId, currentUserId }) {
   };
 
   const downloadInsuredExcel = (policy) => {
-    const rows = orderedPeople(policy.insuredPeople).map((person, index) => ({
-      "REG.": index + 1,
-      Nombre: person.nombre || "",
-      "Cédula": person.cedula || "",
-      Sexo: person.sexo || "",
-      "Fecha de Nacimiento": person.fechaNacimiento || "",
-      EDAD: calculatedAge(person.fechaNacimiento),
-      EXTRAPRIMA: person.extraprima ?? "",
-      "Valor Mensual Por Asegurado": person.valorMensual ?? "",
-      Observaciones: person.observaciones || "",
-      novedad: person.tipoNovedad || person.tipoNovedadAnterior || (person.estado === "DESVINCULADO" ? "RETIRO" : ""),
-      "Fecha novedad":
-        (person.tipoNovedad || person.tipoNovedadAnterior || (person.estado === "DESVINCULADO" ? "RETIRO" : "")) === "RETIRO"
-          ? formatExcelDate(person.fechaDesvinculacion)
-          : (person.tipoNovedad || person.tipoNovedadAnterior || "") === "INGRESO"
-            ? formatExcelDate(person.fechaVinculacion)
-            : "",
-      "Fecha ingreso": formatExcelDate(person.fechaVinculacion),
-      "Fecha retiro": formatExcelDate(person.fechaDesvinculacion),
-    }));
+    const currentPeriodRowNumbers = [];
+    const rows = orderedPeopleForExcel(policy.insuredPeople).map((person, index) => {
+      const novedad = getNoveltyType(person);
+      const fechaIngreso = formatExcelDate(person.fechaVinculacion);
+      const fechaRetiro = formatExcelDate(person.fechaDesvinculacion);
+      const fechaNovedad = formatExcelDate(getNoveltyDate(person));
+
+      if (isCurrentPeriodNovelty(person)) currentPeriodRowNumbers.push(index + 2);
+
+      return {
+        "REG.": index + 1,
+        Nombre: person.nombre || "",
+        "Cédula": person.cedula || "",
+        Sexo: person.sexo || "",
+        "Fecha de Nacimiento": formatExcelDate(person.fechaNacimiento),
+        EDAD: calculatedAge(person.fechaNacimiento),
+        EXTRAPRIMA: person.extraprima ?? "",
+        "Valor Mensual Por Asegurado": person.valorMensual ?? "",
+        Observaciones: person.observaciones || "",
+        novedad,
+        "Fecha novedad": fechaNovedad,
+        "Fecha ingreso": fechaIngreso,
+        "Fecha retiro": fechaRetiro,
+      };
+    });
     const sheet = XLSX.utils.json_to_sheet(rows, {
       header: [
         "REG.",
@@ -502,6 +555,15 @@ export default function UsersAdmin({ companyId, currentUserId }) {
         "Fecha ingreso",
         "Fecha retiro",
       ],
+    });
+    currentPeriodRowNumbers.forEach((rowNumber) => {
+      for (let colIndex = 0; colIndex < 13; colIndex += 1) {
+        const cellAddress = XLSX.utils.encode_cell({ r: rowNumber - 1, c: colIndex });
+        if (!sheet[cellAddress]) continue;
+        sheet[cellAddress].s = {
+          fill: { patternType: "solid", fgColor: { rgb: "FFF2CC" } },
+        };
+      }
     });
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, sheet, "Asegurados");
